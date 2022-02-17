@@ -418,7 +418,7 @@ def target_page(name):
     
     #
     if target:
-        return render_template("targetflexible.html",
+        return render_template("target.html",
                                    target=target,
                                    spectraplots=spectraplots,
                                    lcplot=lcplot)
