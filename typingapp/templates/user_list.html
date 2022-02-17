@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<table class="table table-bordered table-striped table-hover">
+  {% for our_user in our_users %}
+   <tr>
+     <td>{{ our_user.id}} <a href="{{ url_for('update_user',
+       id=our_user.id)}}"> {{ our_user.username}} </a> - {{
+       our_user.email}} - <a href="{{ url_for('delete_user',
+       id=our_user.id)}}"> delete </a> </td>
+   </tr>     
+   {% endfor %}
+ </table>
+
+ 
+{% endblock content %}

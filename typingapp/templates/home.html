@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+ZTF SN classification
+
+<div class="progress">
+  <div class="progress-bar" role="progressbar" style="width: {{ fclassified }}%;" aria-valuenow="{{ fclassified }}" aria-valuemin="0" aria-valuemax="100">{{ fclassified }}%</div>
+  </div>
+  <br/><br/><br/><br/>
+
+{% endblock %}

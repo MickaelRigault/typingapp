@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1> Classification made </h1>
+<table class="table table-bordered table-striped table-hover">
+  {% for classification in classifications %}
+   <tr>
+     <td>{{ classification.date_added }} | {{ classification.id}} | {{ classification.sntype }} | {{ classification.target_id }} | {{ classification.user_id }}
+     </td>
+   </tr>   
+  {% endfor %}
+</table>
+ 
+{% endblock content %}

@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+
+<div class="shadow p-3 mb-5 bg-body rounded">
+
+<form method="POST">
+{{ form.hidden_tag() }}
+{{ form.username.label(class="form-label") }}
+{{ form.username (class="form-control") }}
+<br/>
+{{ form.hidden_tag() }}
+{{ form.name.label(class="form-label") }}
+{{ form.name(class="form-control") }}
+<br/>
+{{ form.hidden_tag() }}
+{{ form.email.label(class="form-label") }}
+{{ form.email(class="form-control") }}
+<br/>
+{{ form.password_hash.label(class="form-label") }}
+{{ form.password_hash(class="form-control") }}
+<br/>
+{{ form.password_hash_matched.label(class="form-label") }}
+{{ form.password_hash_matched(class="form-control") }}
+
+<br/>
+{{ form.submit(class="btn btn-secondary") }}
+  </form>
+  </div>
+<br/><br/><br/>
+
+<table class="table table-bordered table-striped table-hover">
+  {% for our_user in our_users %}
+   <tr>
+     <td>{{ our_user.id}}. <a href="{{ url_for('update_user',
+  id=our_user.id)}}"> {{ our_user.username }} </a> - {{ our_user.email
+  }} <a href="{{ url_for('delete_user',
+  id=our_user.id)}}"> delete </a></td>
+   </tr>     
+   {% endfor %}
+   
+</table>
+
+
+{% endblock %}
+
+

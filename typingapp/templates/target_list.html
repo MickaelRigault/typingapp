@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %} Target list {% endblock %}
+
+{% block content %}
+
+<table class="table table-bordered table-striped table-hover">
+  {% for target in targets %}
+   <tr>
+     <td>{{ target.id}} <a href="{{ url_for('target_page',
+       name=target.name)}}" > {{ target.name }} </a> | {{ target.ra | round(5) }},
+       {{ target.dec | round(5) }} | {{ target.z}} | {{ target.n_spec}}
+     </td>
+   </tr>
+  {% endfor %}
+</table>
+
+{% endblock content %}

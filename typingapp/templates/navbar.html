@@ -1,0 +1,52 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('home')}}">Typing App </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+            {% if current_user.is_authenticated %}
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="{{ url_for('logout') }}">Logout</a>
+              </li>
+    	      {% else %}
+    	        <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="{{ url_for('login') }}">Login</a>
+    	        </li>
+    	        <li class="nav-item">
+                  <a class="nav-link" href="{{ url_for('add_user')}}">Register</a>
+              </li>
+    	      {% endif%}
+
+    	       <li class="nav-item">
+               <a class="nav-link" href="{{ url_for('dashboard')}}">Dashboard</a>
+    	       </li>
+
+
+            <li class="nav-item">
+                <a class="nav-link"href="{{ url_for('classifications')}}">Classifications</a>
+    	       </li>
+          </ul>
+
+          <ul class="navbar-nav d-flex flex-lg-row-reverse">
+              <li class="nav-item ">
+                  <a class="nav-link" href="{{ url_for('target_random')}}">Random</a>
+              </li>
+              <li class="nav-item ">
+                  <a class="nav-link" href="{{ url_for('target_list')}}">Target list</a>
+              </li>
+
+          </ul>
+
+          <form action="/search" class="d-flex" method="POST">
+            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="name">
+          </form>
+        </div>
+  </div>
+</nav>
