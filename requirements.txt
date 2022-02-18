@@ -15,6 +15,7 @@ ztfidr==0.3.0
 ztfquery==1.18.1
 
 # -- Website
+sqlalchemy==1.4.31
 # Flask
 Flask==1.1.2
 Flask-Bootstrap==3.3.7.1

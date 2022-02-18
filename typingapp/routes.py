@@ -19,6 +19,7 @@ from markupsafe import escape
 #             #
 # =========== #
 import ztfidr
+from ztfidr import io
 from ztfidr.target import Target
 
 
@@ -43,9 +44,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # -------------- #
 # LOCAL DATABASE #
 # -------------- #
-app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///users.db'
+DB_PATH  = os.path.join( io.IDR_PATH, "typingapp.db")
+
+app.config["SQLALCHEMY_DATABASE_URI"] = f'sqlite:///{DB_PATH}'
 db = SQLAlchemy(app)
-DB_PATH  = os.path.join( os.path.dirname(__file__), "users.db")
+
 
 
 # ==================== #
@@ -127,10 +130,15 @@ class Classifications( db.Model ):
 
     id = db.Column(db.Integer, primary_key=True)
     
-    user_id = db.Column( db.String(100), nullable=False)
-    target_id = db.Column( db.String(100), nullable=False)
-    sntype = db.Column( db.String(100), nullable=False)
+    user_id = db.Column( db.Integer, nullable=False)
+    target_id = db.Column( db.Integer, nullable=False)
+    target_name = db.Column( db.String(100), nullable=False)
 
+    # - What kind is stored
+    kind = db.Column( db.String(100), nullable=False)
+    # - What value is stored
+    value = db.Column( db.String(100), nullable=False)    
+    
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
     
     
@@ -177,10 +185,10 @@ def get_classifications_df():
     df["sntype"] = df.sntype.str.strip().replace("SNe","SN").replace("SN II","NotIa")
     return df
 
-def build_targets_db(db_path, iloc_range=None, tablename="Targets"):
-    from ztfidr import io
-    import sqlite3
-    
+def build_targets_db(iloc_range=None, 
+                     tablename="targets"):
+    """ """
+    # Data to Store
     data = io.get_targets_data()
     target_db = data.reset_index().rename({"index":"name",
                                "sn_ra":"ra","sn_dec":"dec",
@@ -188,18 +196,14 @@ def build_targets_db(db_path, iloc_range=None, tablename="Targets"):
                                 "p(type)":"auto_type_prob","p(subtype|type)":"auto_subtype_prob",
                               }, axis=1)
     target_db = target_db.reset_index().rename({"index":"id"}, axis=1)
-
-
     
-    con = sqlite3.connect(db_path)
     if iloc_range is None:
         to_store = target_db
     else:
         to_store = target_db.iloc[iloc_range[0]:iloc_range[1]]
         
-    to_store.to_sql(tablename, con, if_exists="replace")
-    
-
+    # Actual storing
+    to_store.to_sql(tablename, db.engine, if_exists="replace")
 
 # ================ #
 #                  #
@@ -343,6 +347,98 @@ def delete_user(id):
     our_users = Users.query.order_by(Users.date_added)
     return redirect( url_for("add_user") )
         
+# ================ #
+#                  #
+#  CLASSIFICATION  #
+#                  #
+# ================ #
+@app.route("/rmclassification/<int:id>")
+def delete_classification(id):
+    """ """
+    classification_to_delete = Classifications.query.get_or_404(id) # get the DB entry associated to the id
+    
+    name = None # because first time we load, it will be None.
+    try:
+        db.session.delete(classification_to_delete) # change made to the session, then you need to commit
+        db.session.commit()        
+        flash("User Deleted Successfully", category="success")
+    except:
+        flash("Whoops! There was a probleme deleting the classification.", category="error")
+
+    return redirect( url_for("classifications") )
+
+@app.route("/clearclassifications")
+def clear_classifications():
+    """ """
+    db.session.query(Classifications).delete()
+    db.session.commit()
+    return redirect( url_for("classifications") )
+
+
+@app.route("/classify/<int:id>", methods=["GET","POST"])
+@login_required
+def classify(id, flash_classified=False):
+    """ """
+    # - Target action made to 
+    target = Targets.query.get_or_404(id) # get the DB entry associated to the id
+    
+    # ---------------- #
+    # Action Made      #
+    # ---------------- #
+    if request.method == "POST":
+        # Classification
+        if "typing" in request.form:
+            value = request.form["typing"]    
+            classification = Classifications(user_id=current_user.id,
+                                             target_id=id,
+                                             target_name=target.name,
+                                             kind="typing",
+                                             value=value
+                                            )
+            if flash_classified:
+                if value.lower() == "unclear":
+                    flash(f"Unclear classification for {target.name}", category="warning")
+                else:
+                    flash(f"You classified {target.name} as {value}", category="success")
+                
+            db.session.add(classification)
+            db.session.commit()
+            return redirect( url_for("target_random") )
+        
+        # Report                
+        if "report" in request.form:
+            value = request.form["report"]    
+            classification = Classifications(user_id=current_user.id,
+                                             target_id=id,
+                                             target_name=target.name,
+                                             kind="report",
+                                             value=value)
+            if "Emission line" in value:
+                flash(f"You reported an emission line for {target.name}", category="info")
+            else:
+                flash(f"You reported a {value} issue for {target.name}", category="error")
+                
+            db.session.add(classification)
+            db.session.commit()
+            return redirect( url_for(f"target_page", name=target.name, warn_report=False) )
+
+        # Report              
+        if "skip" in request.form:
+            flash(f"You skipped {target.name} | no db update", category="secondary")
+            return redirect( url_for("target_random") )
+
+        
+    flash(f"Classication/Report action Failed", category="danger")
+    return redirect( url_for("target_random") )
+
+
+@app.route("/classifications")
+@login_required
+def classifications():
+    """ """
+    classifications = Classifications.query.order_by(Classifications.id)
+    return render_template("classifications.html", classifications=classifications)
+
 
 # ================ #
 #                  #
@@ -354,36 +450,59 @@ def search():
     """ """
     if request.method == "POST":
         target_name = request.form["name"]
-        flash(f"You search for {target_name}", category="warning")
         return redirect( url_for(f"target_page", name=target_name) )
     else:
         return redirect( url_for("home") )
 
+    
 @app.route("/target/list")
 def target_list():
     """ """        
     targets = Targets.query.order_by(Targets.id)
     return render_template("target_list.html", targets=targets)
 
+@app.route("/targetid/<id>")
+@login_required
+def targetid_page(id):
+    """ """
+    target = Targets.query.get_or_404(id)
+    return target_page(target.name)
+
+    
 @app.route("/target/<name>")
 @login_required
-def target_page(name):
+def target_page(name, warn_typing=True, warn_report=True):
     """ """
     ZQUALITY_LABEL = {2:" z source: host",
                       1:" z source: sn",
                       0:" z source: unknown",
                       None:" z source: not given"}
 
-
-    
     from matplotlib.figure import Figure
-    
+    # DB
     targetname = escape(name)
     target = Targets.query.filter_by(name=targetname).first()
+
+    args = request.args
+    # annoying the False/True are strings...
+    if eval(args.get("warn_typing", default=str(warn_typing), type=str)):
+        t_typings = Classifications.query.filter_by(kind="typing",
+                                                        target_name=targetname, user_id=current_user.id).all()
+        for t_typing in t_typings:
+            flash(f"You already classify this target ({target.name}) as {t_typing.value}", category="warning")
+
+
+    if eval(args.get("warn_report", default=str(warn_report), type=str)):
+        t_reports = Classifications.query.filter_by(kind="report",
+                                                        target_name=targetname, user_id=current_user.id).all()
+        for t_report in t_reports:
+            flash(f"You already reported {t_report.value} this target ({target.name})", category="info")
+
+
+    
     t_ = Target.from_name(name)
     redshift, z_quality = t_.get_redshift()        
-
-
+    
     # ------------ #
     # - LC Plot    #
     # ------------ #
@@ -413,7 +532,6 @@ def target_page(name):
     figlc = t_.lightcurve.show(ax=axlc)
     _ = figlc.savefig(buflc, format="png", dpi=250)
     lcplot = base64.b64encode(buflc.getbuffer()).decode("ascii")
-
     del t_
     
     #
@@ -435,54 +553,5 @@ def target_random():
     return target_page(targetname)
 
     
-@app.route("/classify/<int:id>", methods=["GET","POST"])
-@login_required
-def classify(id):
-    """ """
-    target = Targets.query.filter_by(id=id).first()
-    if request.method == "POST":
-        # Classification
-        if "typing" in request.form:
-            typing = request.form["typing"]    
-            classification = Classifications(user_id=current_user.id,
-                                             target_id=id,
-                                             sntype=typing)
-            if typing == "Unclear":
-                flash(f"Unclear classification for {target.name}", category="warning")
-            else:
-                flash(f"You classified {target.name} as {typing}", category="success")
-            db.session.add(classification)
-            db.session.commit()
-
-            return redirect( url_for("target_random") )
-        
-        # Report                
-        if "report" in request.form:
-            report = request.form["report"]    
-            classification = Classifications(user_id=current_user.id,
-                                             target_id=id,
-                                             sntype=report)
-            if "Emission line" in report:
-                flash(f"You reported an emission line for {target.name}", category="info")
-            else:
-                flash(f"You reported a {report} issue for {target.name}", category="error")
-            db.session.add(classification)
-            db.session.commit()
-
-            return redirect( url_for(f"target_page", name=target.name) )
-
-        if "skip" in request.form:
-            flash(f"You skipped {target.name} | no db update", category="secondary")
-            return redirect( url_for("target_random") )
-                
-    flash(f"Typing Failed updated")
-    return redirect( url_for("target_random") )
-
-@app.route("/classifications")
-@login_required
-def classifications():
-    """ """
-    classifications = Classifications.query.order_by(Classifications.id)
-    return render_template("classifications.html", classifications=classifications)
     
     

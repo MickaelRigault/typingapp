@@ -2,14 +2,50 @@
 
 {% block content %}
 
-<h1> Classification made </h1>
-<table class="table table-bordered table-striped table-hover">
-  {% for classification in classifications %}
-   <tr>
-     <td>{{ classification.date_added }} | {{ classification.id}} | {{ classification.sntype }} | {{ classification.target_id }} | {{ classification.user_id }}
-     </td>
-   </tr>   
-  {% endfor %}
+<div class="sticky-top my-2 py-0" style="background: linear-gradient(to top,
+                                                                rgba(254, 254, 254 ,0.5),
+                                                                rgba(254, 254, 254 , 1 ))">
+    <div class="row">
+        <div class="col-auto me-auto">
+            <h1> Classification or Report made </h1>
+        </div>
+
+        <div class="col-auto">
+            <a class="btn btn-danger" href="{{ url_for('clear_classifications') }}"">
+               Delete all
+            </a>
+        </div>
+   </div>
+
+</div>
+
+
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">user id</th>
+            <th scope="col">target</th>
+            <th scope="col">kind</th>
+            <th scope="col">value</th>
+            <th scope="col">time</th>
+            <th scope="col">delete</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for classification in classifications %}
+            <tr>
+                <th scope="row">{{ classification.id}}</th>
+                <td>{{ classification.user_id}}</td>
+                <td><a href="{{ url_for('target_page', name=classification.target_name) }}"> {{ classification.target_name }} </a></td>
+                <td>{{ classification.kind}}</td>
+                <td>{{ classification.value}}</td>
+                <td>{{ classification.date_added}}</td>
+                <td><a href="{{ url_for('delete_classification', id=classification.id)}}"> delete </a></td>
+            </tr>
+        {% endfor %}
+    </tbody>
 </table>
- 
+
+
 {% endblock content %}
