@@ -4,6 +4,7 @@ from io import BytesIO
 
 from typingapp import app
 
+import warnings
 import numpy as np
 import pandas
 from .forms import UserForm, LoginForm
@@ -543,9 +544,14 @@ def target_page(name, warn_typing=True, warn_report=True):
         spectraplots.append(base64.b64encode(buf.getbuffer()).decode("ascii"))
 
     # - Storing the LC plot    #
-    figlc = t_.lightcurve.show(ax=axlc)
-    _ = figlc.savefig(buflc, format="png", dpi=250)
-    lcplot = base64.b64encode(buflc.getbuffer()).decode("ascii")
+    try:
+        figlc = t_.lightcurve.show(ax=axlc)
+        _ = figlc.savefig(buflc, format="png", dpi=250)
+        lcplot = base64.b64encode(buflc.getbuffer()).decode("ascii")
+    except:
+        warnings.warn(f"Cannot build the LC for {name}")
+        lcplot = None
+        
     del t_
     
     #

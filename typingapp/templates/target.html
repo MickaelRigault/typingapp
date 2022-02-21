@@ -155,7 +155,8 @@
     {% endfor %}
   </form>
 
-  <!--- Show the LC --->
+    <!--- Show the LC --->
+  {% if lcplot != None %}    
   <div class="row justify-content-md-center">
     <img src='data:image/png;base64,{{ lcplot }}' />
   </div">
@@ -174,7 +175,8 @@
         </div>
       </div>
     </div>
-  </form>
+    </form>
+    {% endif %}
 
 </div">
 
