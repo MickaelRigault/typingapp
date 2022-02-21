@@ -110,11 +110,9 @@
 
         <div class="input-group">
           <div class="input-group-prepend mb-2 me-2">
-            <input type="submit" value=" Report:  " name="report" class="btn btn-danger disabled">
-            <input type="submit" value=" Lightcurve " name="report" class="btn btn-outline-danger">
-            <input type="submit" value="  Spectrum  " name="report" class="btn btn-outline-danger">
-            <input type="submit" value="  Redshift  " name="report" class="btn btn-outline-danger">
-            <input type="submit" value=" Emission line " name="report" class="btn btn-outline-secondary">
+            <input type="submit" value=" Report:" name="report" class="btn btn-danger disabled">
+            <input type="submit" value=" Redshift " name="report:target:redshift" class="btn btn-outline-danger">
+            <input type="submit" value="  Target  " name="report:target:target" class="btn btn-outline-secondary">
           </div>
         </div>
 
@@ -123,7 +121,6 @@
             <input type="submit" value="  Skip  " name="skip" class="btn btn-outline-dark">
           </div>
         </div>
-
     </div>
 </form>
 
@@ -134,17 +131,48 @@
 
 <div class="container-fluid">
   <!--- Loop over the spectra --->
+  <form method="post" action="/classify/{{ target.id }}" >
+    {% for specplot in spectraplots %}
+    <div class="row">
+      <img src='data:image/png;base64,{{ specplot }}'/>
+    </div>
+    <div class="row mb-3 ">
+      <div class="d-grid gap-2 d-sm-flex justify-content-end">
 
-  {% for specplot in spectraplots %}
-      <div class="row justify-content-md-center gy-2">
-        <img src='data:image/png;base64,{{ specplot }}'/>
+        <div class="btn-group mb-2 " role="group" aria-label="First group">
+          <input type="submit" value=" Report:" name="report" class="btn btn-outline-danger disabled btn-sm">
+        </div>
+
+        <div class="btn-group mb-2">
+          <input type="submit" value=" data " name="report:spec:data:{{loop.revindex0}}" class="btn btn-outline-secondary btn-sm">
+          <input type="submit" value=" snid " name="report:spec:snid:{{loop.revindex0}}" class="btn btn-outline-secondary btn-sm">
+          <input type="submit" value=" line " name="report:spec:emissionline:{{loop.revindex0}}" class="btn btn-outline-secondary btn-sm">
+        </div>
       </div>
-  {% endfor %}
+    </div>
+    {% endfor %}
+  </form>
 
   <!--- Show the LC --->
   <div class="row justify-content-md-center">
     <img src='data:image/png;base64,{{ lcplot }}' />
   </div">
+
+  <form method="post" action="/classify/{{ target.id }}" >
+    <div class="row mb-3">
+      <div class="d-grid gap-2 d-sm-flex justify-content-end">
+
+        <div class="btn-group mb-2" role="group" aria-label="First group">
+          <input type="submit" value=" Report:" name="report" class="btn btn-outline-danger disabled btn-sm">
+        </div>
+
+        <div class="btn-group mb-2">
+          <input type="submit" value=" data " name="report:lightcurve:data" class="btn btn-outline-secondary btn-sm">
+          <input type="submit" value=" salt " name="report:lightcurve:salt" class="btn btn-outline-secondary btn-sm">
+        </div>
+      </div>
+    </div>
+  </form>
 
 </div">
 

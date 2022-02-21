@@ -380,14 +380,19 @@ def clear_classifications():
 def classify(id, flash_classified=False):
     """ """
     # - Target action made to 
-    target = Targets.query.get_or_404(id) # get the DB entry associated to the id
+    target = Targets.query.get_or_404(id) # get the DB entry
+                                        # associated to the id
+                                        
+    # Information are contained withing this                                     
+    input_keys = list(request.form.keys())[0]
     
     # ---------------- #
     # Action Made      #
     # ---------------- #
     if request.method == "POST":
+        
         # Classification
-        if "typing" in request.form:
+        if input_keys == "typing": # This is a classification
             value = request.form["typing"]    
             classification = Classifications(user_id=current_user.id,
                                              target_id=id,
@@ -404,32 +409,29 @@ def classify(id, flash_classified=False):
             db.session.add(classification)
             db.session.commit()
             return redirect( url_for("target_random") )
-        
-        # Report                
-        if "report" in request.form:
-            value = request.form["report"]    
+
+        elif "report:" in input_keys: # report
+            kind="report"
+            value = input_keys.replace("report:","")
+            
             classification = Classifications(user_id=current_user.id,
                                              target_id=id,
                                              target_name=target.name,
-                                             kind="report",
+                                             kind=kind,
                                              value=value)
-            if "Emission line" in value:
-                flash(f"You reported an emission line for {target.name}", category="info")
-            else:
-                flash(f"You reported a {value} issue for {target.name}", category="error")
-                
+            
+            flash(f"You reported {value} for {target.name}", category="warning")
             db.session.add(classification)
             db.session.commit()
-            return redirect( url_for(f"target_page", name=target.name, warn_report=False) )
-
-        # Report              
-        if "skip" in request.form:
+            return redirect( url_for(f"target_page", name=target.name,
+                                             warn_report=False) )
+        
+        elif "skip" in request.form:
             flash(f"You skipped {target.name} | no db update", category="secondary")
             return redirect( url_for("target_random") )
 
-        
-    flash(f"Classication/Report action Failed", category="danger")
-    return redirect( url_for("target_random") )
+    flash(f"Classication/Report action Failed input_keys: {input_keys}", category="danger")
+    return redirect( url_for(f"target_page", name=target.name, warn_report=False) )
 
 
 @app.route("/classifications")
