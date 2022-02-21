@@ -175,15 +175,26 @@ def load_user(user_id):
 #    TOOLS         #
 #                  #
 # ================ #
-NON_CLASSIFICATIONS = ["Unclear","Report", "Skipper"]
-CLASSIFICATIONS = ["SN Ia","NotIa"]
-SUBCLASSIFICATIONS = []
     
-def get_classifications_df():
+def get_classified(incl_unclear=False, type_isin=None):
     """ """
-    df = pandas.read_sql("classifications", con=db.engine)
-    df["sntype"] = df.sntype.str.strip().replace("SNe","SN").replace("SN II","NotIa")
-    return df
+    
+    typed_names = Classifications.query.filter_by(kind="typing")
+    if not incl_unclear:
+        typed_names = typed_names.filter( Classifications.value.isnot("unclear") )
+    if type_isin is not None:
+        typed_names = typed_names.filter( Classifications.value.in_( list(np.atleast_1d(type_isin))) )
+                                             
+    return np.concatenate(typed_names.with_entities( Classifications.target_name).all() )
+
+def get_not_classified(incl_unclear=False, type_isin=None, as_basequery=False):
+    """ """
+    isclassified = get_classified( incl_unclear=incl_unclear, type_isin=type_isin )
+    basequery = Targets.query.filter( Targets.name.notin_(isclassified) )
+    if as_basequery:
+        return basequery
+    return np.concatenate( basequery.with_entities(Targets.name).all() )
+
 
 def build_targets_db(iloc_range=None, 
                      tablename="targets"):
@@ -361,7 +372,7 @@ def delete_classification(id):
     try:
         db.session.delete(classification_to_delete) # change made to the session, then you need to commit
         db.session.commit()        
-        flash("User Deleted Successfully", category="success")
+        flash("Classification deleted successfully", category="success")
     except:
         flash("Whoops! There was a probleme deleting the classification.", category="error")
 
@@ -398,7 +409,7 @@ def classify(id, flash_classified=False):
                                              target_id=id,
                                              target_name=target.name,
                                              kind="typing",
-                                             value=value
+                                             value=value.strip().lower()
                                             )
             if flash_classified:
                 if value.lower() == "unclear":
@@ -418,7 +429,8 @@ def classify(id, flash_classified=False):
                                              target_id=id,
                                              target_name=target.name,
                                              kind=kind,
-                                             value=value)
+                                             value=value.strip().lower()
+                                                 )
             
             flash(f"You reported {value} for {target.name}", category="warning")
             db.session.add(classification)
@@ -551,7 +563,7 @@ def target_page(name, warn_typing=True, warn_report=True):
 @login_required
 def target_random():
     """ """
-    targetname = Targets.query.order_by(func.random()).first().name
+    targetname = get_not_classified(as_basequery=True).order_by(func.random()).first().name
     return target_page(targetname)
 
     
