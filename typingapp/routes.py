@@ -381,8 +381,8 @@ def delete_classification(id):
 
 @app.route("/clearclassifications")
 def clear_classifications():
-    """ """
-    db.session.query(Classifications).delete()
+    """ """    
+    db.session.query(Classifications).filter_by(user_id=current_user.id).delete()
     db.session.commit()
     return redirect( url_for("classifications") )
 
@@ -451,9 +451,15 @@ def classify(id, flash_classified=False):
 @login_required
 def classifications():
     """ """
-    classifications = Classifications.query.order_by(Classifications.id)
+    classifications = Classifications.query.order_by(Classifications.id).filter_by(user_id=current_user.id)
     return render_template("classifications.html", classifications=classifications)
 
+@app.route("/allclassifications")
+@login_required
+def all_classifications():
+    """ """
+    classifications = Classifications.query.order_by(Classifications.id)
+    return render_template("classifications.html", classifications=classifications)
 
 # ================ #
 #                  #
