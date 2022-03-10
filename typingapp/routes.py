@@ -143,13 +143,6 @@ class Classifications( db.Model ):
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
     
     
-#subs = db.Table("classification",
-#                    db.Column("classifier_id", db.Integer, db.ForeignKey('users.id') ),
-#                    db.Column("target_id", db.Integer, db.ForeignKey('targets.id') ),
-#s                    )
-
-    
-    
     
         
 # ================ #
@@ -176,11 +169,15 @@ def load_user(user_id):
 #    TOOLS         #
 #                  #
 # ================ #
-    
-def get_classified(incl_unclear=False, type_isin=None):
+def get_classified(incl_unclear=False, type_isin=None, from_current_user=True):
     """ """
-    
     typed_names = Classifications.query.filter_by(kind="typing")
+    if from_current_user:
+        typed_names = typed_names.filter_by(user_id=current_user.id)
+
+    if typed_names.count()==0:
+        return []
+    
     if not incl_unclear:
         typed_names = typed_names.filter( Classifications.value.isnot("unclear") )
     if type_isin is not None:
@@ -191,7 +188,11 @@ def get_classified(incl_unclear=False, type_isin=None):
 def get_not_classified(incl_unclear=False, type_isin=None, as_basequery=False):
     """ """
     isclassified = get_classified( incl_unclear=incl_unclear, type_isin=type_isin )
-    basequery = Targets.query.filter( Targets.name.notin_(isclassified) )
+    if isclassified is not None and len(isclassified)>0:
+        basequery = Targets.query.filter( Targets.name.notin_(isclassified) )
+    else:
+        basequery = Targets.query
+        
     if as_basequery:
         return basequery
     return np.concatenate( basequery.with_entities(Targets.name).all() )
@@ -225,12 +226,6 @@ def build_targets_db(iloc_range=None,
 @app.route("/")
 def home():
     """ """
-#    ntargets = Targets.query.count()
-#    classificationdf = get_classifications_df()
-#    nclassified = len(classificationdf[~classificationdf["sntype"].isin(["Unclear","Report", "Skipper"])])
-    
-#    fclassified = nclassified/ntargets
-#    typeserie = classificationdf["sntype"].value_counts().sort_values()
     return render_template("home.html", fraction=50)
 
 
@@ -477,6 +472,7 @@ def search():
 
     
 @app.route("/target/list")
+@login_required
 def target_list():
     """ """        
     targets = Targets.query.order_by(Targets.id)
