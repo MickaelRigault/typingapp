@@ -120,13 +120,15 @@ class Targets( db.Model ): # created by pandas
 
     #
     #
+
+
+NTARGETS = Targets.query.count()
     
 # ==================== #
 #                      #
 #   TARGET-INFO         #
 #                      #
 # ==================== #
-
 class Classifications( db.Model ):
 
     id = db.Column(db.Integer, primary_key=True)
@@ -169,7 +171,7 @@ def load_user(user_id):
 #    TOOLS         #
 #                  #
 # ================ #
-def get_classified(incl_unclear=False, type_isin=None, from_current_user=True):
+def get_classified(incl_unclear=False, type_isin=None, from_current_user="current"):
     """ """
     typed_names = Classifications.query.filter_by(kind="typing")
     if from_current_user:
@@ -180,10 +182,11 @@ def get_classified(incl_unclear=False, type_isin=None, from_current_user=True):
     
     if not incl_unclear:
         typed_names = typed_names.filter( Classifications.value.isnot("unclear") )
+        
     if type_isin is not None:
         typed_names = typed_names.filter( Classifications.value.in_( list(np.atleast_1d(type_isin))) )
                                              
-    return np.concatenate(typed_names.with_entities( Classifications.target_name).all() )
+    return np.concatenate(typed_names.with_entities( Classifications.target_name).distinct().all() )
 
 def get_not_classified(incl_unclear=False, type_isin=None, as_basequery=False):
     """ """
@@ -226,7 +229,10 @@ def build_targets_db(iloc_range=None,
 @app.route("/")
 def home():
     """ """
-    return render_template("home.html", fraction=50)
+    nclassified = len(get_classified(incl_unclear=True, from_current_user=False))
+    fclassified = nclassified/NTARGETS * 100
+    
+    return render_template("home.html", fclassified=fclassified)
 
 
 # ================ #
