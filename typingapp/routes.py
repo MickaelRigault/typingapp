@@ -221,6 +221,42 @@ def build_targets_db(iloc_range=None,
     # Actual storing
     to_store.to_sql(tablename, db.engine, if_exists="replace")
 
+def merging_userdb(filepath_db):
+    """ """
+    import sqlite3
+    connew = sqlite3.connect(filepath_db)
+    #
+    # Merge the user
+    #
+    # - Current
+    current_users = pandas.read_sql_query("SELECT * FROM Users", db.engine)
+    # -> new
+    newuser = pandas.read_sql_query("SELECT * FROM Users", connew)
+    newuser_id = newuser["id"] + current_users["id"].max() #will need it later
+    newuser["id"] = newuser_id
+    knewuser = newuser.to_dic()
+    _ = knewuser.pop("date_added") # because db sets it automatically.
+    # - merging
+    user = Users(**knewuser)
+    db.session.add(user)
+    db.session.commit()
+    #
+    # Merge the Classifications
+    #
+    current_classifications = pandas.read_sql_query("SELECT * FROM Classifications", db.engine)
+    new_classifications = pandas.read_sql_query("SELECT * FROM Classifications", connew)
+    new_classifications["user_id"]=newuser_id
+    new_classifications["id"]+=current_classifications["id"].max()
+    # merging
+    for i,newclassification in all_classifications.iterrows():
+        c = newclassification.to_dict()
+        _ = c.pop("date_added")
+        newc = Classifications(**c)
+        db.session.add(newc)
+        
+    db.session.add(user)
+    db.session.commit()
+
 # ================ #
 #                  #
 #    ROUTES        #
@@ -282,6 +318,7 @@ def dashboard():
 #  USER    #
 # -------- #
 @app.route("/user/list")
+@login_required 
 def user_list():
     """ """        
     our_users = Users.query.order_by(Users.date_added)
@@ -324,6 +361,7 @@ def add_user():
     return render_template("add_user.html", form=form, name=name, our_users=our_users)
 
 @app.route("/update/<int:id>", methods=["GET","POST"])
+@login_required 
 def update_user(id):
     """ """
     form = UserForm()
@@ -346,6 +384,7 @@ def update_user(id):
                                        name_to_update=name_to_update)
 
 @app.route("/delete/<int:id>")
+@login_required 
 def delete_user(id):
     """ """
     user_to_delete = Users.query.get_or_404(id) # get the DB entry associated to the id
@@ -359,13 +398,14 @@ def delete_user(id):
 
     our_users = Users.query.order_by(Users.date_added)
     return redirect( url_for("add_user") )
-        
+
 # ================ #
 #                  #
 #  CLASSIFICATION  #
 #                  #
 # ================ #
 @app.route("/rmclassification/<int:id>")
+@login_required 
 def delete_classification(id):
     """ """
     classification_to_delete = Classifications.query.get_or_404(id) # get the DB entry associated to the id
@@ -381,6 +421,7 @@ def delete_classification(id):
     return redirect( url_for("classifications") )
 
 @app.route("/clearclassifications")
+@login_required 
 def clear_classifications():
     """ """    
     db.session.query(Classifications).filter_by(user_id=current_user.id).delete()
@@ -455,7 +496,7 @@ def classifications():
     classifications = Classifications.query.order_by(Classifications.id).filter_by(user_id=current_user.id)
     return render_template("classifications.html", classifications=classifications)
 
-@app.route("/allclassifications")
+@app.route("/classifications/all")
 @login_required
 def all_classifications():
     """ """
