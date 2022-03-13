@@ -265,10 +265,29 @@ def merging_userdb(filepath_db):
 @app.route("/")
 def home():
     """ """
-    nclassified = len(get_classified(incl_unclear=True, from_current_user=False))
-    fclassified = nclassified/NTARGETS * 100
+    current_classifications = pandas.read_sql_query("SELECT * FROM Classifications WHERE kind='typing'",
+                                                        db.engine)
+    # Remove the unclear
+    classifications = current_classifications[~(current_classifications["value"].astype(str)=="unclear")]
+    # 
+    nclassifications = pandas.DataFrame(classifications.groupby("user_id").size().sort_values(ascending=False), 
+                                   columns=["nclassifications"])
+    users = pandas.read_sql_query("SELECT * FROM Users", db.engine).set_index("id")
+    nclassifications["name"] = users.loc[nclassifications.index]["name"]
+    dictclass= nclassifications.T.to_dict()
     
-    return render_template("home.html", fclassified=fclassified)
+    # n-classifications
+    target_classifications = classifications.groupby("target_name").size()
+    atleast1_classifications = np.sum(target_classifications>=1)/NTARGETS * 100
+    atleast2_classifications = np.sum(target_classifications>=2)/NTARGETS * 100
+
+    # per user classifications
+
+    return render_template("home.html",
+                               atleast1_classifications=atleast1_classifications,
+                               atleast2_classifications=atleast2_classifications,
+                               dictclass=dictclass
+                               )
 
 
 # ================ #

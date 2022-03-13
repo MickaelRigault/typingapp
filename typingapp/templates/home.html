@@ -11,12 +11,39 @@
 </div>
 
 <div class="progress"  style="height: 20px;">
-  <div class="progress-bar" role="progressbar"
-  style="width: {{ fclassified }}%;"
+  <div class="progress-bar bg-primary" role="progressbar"
+  style="width: {{ atleast2_classifications*10 }}%;"
   aria-valuenow="12"
   aria-valuemin="0" aria-valuemax="100">
-  {{ "{:,.1f}".format(fclassified) }}%</div>
+  {{ "{:,.1f}".format(atleast2_classifications) }}%</div>
+
+  <div class="progress-bar bg-secondary" role="progressbar"
+  style="width: {{ atleast1_classifications }}%;"
+  aria-valuenow="12"
+  aria-valuemin="0" aria-valuemax="100">
+  {{ "{:,.1f}".format(atleast1_classifications) }}%</div>
 </div>
+<br>
+<br>
+<br>
 
+<div class="container mx-auto" style="width: 75%;">
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col"> Name </th>
+        <th scope="col"> # Classifications </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for id, user_class in dictclass.items() %}
+      <tr>
+        <th scope="row"> {{ user_class['name'] }} </th>
+        <td>{{ user_class['nclassifications'] }}</td>
+      </tr>
 
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}
