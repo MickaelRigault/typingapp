@@ -144,8 +144,6 @@ class Classifications( db.Model ):
     
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
     
-    
-    
         
 # ================ #
 #                  #
@@ -164,7 +162,6 @@ def load_user(user_id):
         return Users.query.get( int(user_id) )
     except:
         return None
-
 
 # ================ #
 #                  #
@@ -232,9 +229,12 @@ def merging_userdb(filepath_db):
     current_users = pandas.read_sql_query("SELECT * FROM Users", db.engine)
     # -> new
     newuser = pandas.read_sql_query("SELECT * FROM Users", connew)
+    if len(newuser)>1:
+        raise NotImplementedError("Only 1 user DB merge implemented.")
+    newuser = newuser.iloc[0]
     newuser_id = newuser["id"] + current_users["id"].max() #will need it later
     newuser["id"] = newuser_id
-    knewuser = newuser.to_dic()
+    knewuser = newuser.to_dict()
     _ = knewuser.pop("date_added") # because db sets it automatically.
     # - merging
     user = Users(**knewuser)
@@ -248,7 +248,7 @@ def merging_userdb(filepath_db):
     new_classifications["user_id"]=newuser_id
     new_classifications["id"]+=current_classifications["id"].max()
     # merging
-    for i,newclassification in all_classifications.iterrows():
+    for i,newclassification in new_classifications.iterrows():
         c = newclassification.to_dict()
         _ = c.pop("date_added")
         newc = Classifications(**c)
@@ -274,7 +274,13 @@ def home():
                                    columns=["nclassifications"])
     users = pandas.read_sql_query("SELECT * FROM Users", db.engine).set_index("id")
     nclassifications["name"] = users.loc[nclassifications.index]["name"]
-    dictclass= nclassifications.T.to_dict()
+    # Add reports
+    current_report = pandas.read_sql_query("SELECT * FROM Classifications WHERE kind='report'",
+                                                    db.engine)
+    nclassifications= pandas.merge(nclassifications,
+                                  pandas.DataFrame(current_report.groupby("user_id").size(), columns=["nreports"]),
+                                  left_index=True, right_index=True)
+    dictclass= nclassifications.T.to_dict() # convert to dict for the website.
     
     # n-classifications
     target_classifications = classifications.groupby("target_name").size()
