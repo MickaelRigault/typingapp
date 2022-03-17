@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %} Typing Tuto {% endblock %}
+{% block content %}
+
+<div class="container mt-4">
+
+  <div class="row">
+    <h1> tutorial </h1>
+
+    <h4> Introduction </h4>
+
+    <p>TypingApp aims to help the community to go through the final data products (info, spectra, lightcurves, fits)
+    inside the Internal Data Release (IDR) prior starting all the scientific analyses.</p>
+
+    <p>Going through the targets you are invited to classify them as Ia, not-Ia or Unclear.
+    If you feel like it, you can also sub-type the target as, e.g. 91T- or 91bg-like SNe Ia.
+    No pressure, all the spectra will be classified by multiple users.
+    Eventually, we shall together go through the few cases with inconsistent classifications to settle on the final release.</p>
+
+    <p>Using this app, users are invited to report bad data, bad fits or to point to the existence of
+    host emission lines in spectra that could allow us to improve the redshift estimation.</p>
+
+  </div>
+
+
+  <div class="callout">
+    Click on the items below to have details concerning what you see on the target page.
+  </div>
+
+  <div class="accordion accordion-flush" id="accordionFlushExample">
+
+    <!--- Tutorials General Information --->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="flush-headingOne">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+          <h4>General Information</h4>
+        </button>
+      </h2>
+      <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+        <div class="accordion-body">
+          Information concerning the target as stored in the IDR.
+          <br>
+          <img src="{{ url_for('static', filename='images/tutorial_general.png') }}"  width="100%"/>
+
+        </div>
+      </div>
+    </div>
+
+    <!--- Tutorials Typing --->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="flush-headingTwo">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">
+          <h4>Typing</h4>
+        </button>
+      </h2>
+      <div id="flush-collapseTwo" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
+        <div class="accordion-body">
+          What do the typing and global report buttons mean.
+          <br>
+          <img src="{{ url_for('static', filename='images/tutorial_typingbuttons.png') }}"  width="100%"/>
+        </div>
+      </div>
+    </div>
+
+    <!--- Tutorials Spectra --->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="flush-headingThree">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree" aria-expanded="false" aria-controls="flush-collapseThree">
+          <h4>Spectra</h4>
+        </button>
+      </h2>
+      <div id="flush-collapseThree" class="accordion-collapse collapse" aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+        <div class="accordion-body">
+          Read the Spectral & SNID result figures
+          <br>
+          <img src="{{ url_for('static', filename='images/tutorial_spectra.png') }}"  width="100%"/>
+
+        </div>
+      </div>
+    </div>
+
+    <!--- Tutorials LC --->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="flush-headingFour">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseFour" aria-expanded="false" aria-controls="flush-collapseFour">
+          <h4>Lightcurve</h4>
+        </button>
+      </h2>
+      <div id="flush-collapseFour" class="accordion-collapse collapse" aria-labelledby="flush-headingFour" data-bs-parent="#accordionFlushExample">
+        <div class="accordion-body">
+          Read the lightcurve figures
+          <br>
+          <img src="{{ url_for('static', filename='images/tutorial_lc.png') }}"  width="100%"/>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+
+
+
+</div>
+{% endblock %}

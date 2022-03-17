@@ -9,8 +9,7 @@
         </button>
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-
+          <ul class="navbar-nav mr-auto mb-2 mb-lg-0">
             {% if current_user.is_authenticated %}
               <li class="nav-item">
                 <a class="nav-link active" aria-current="page" href="{{ url_for('logout') }}">Logout</a>
@@ -31,13 +30,20 @@
     	       </li>
           </ul>
 
-          <ul class="navbar-nav d-flex flex-lg-row-reverse">
+
+          <ul class="navbar-nav mx-auto">
               <li class="nav-item ">
-                  <a class="nav-link" href="{{ url_for('target_random')}}">Random</a>
+                  <a class="nav-link" href="{{ url_for('tutorials')}}">Tutorials</a>
               </li>
-              <li class="nav-item ">
-                  <a class="nav-link" href="{{ url_for('target_list')}}">Target list</a>
-              </li>
+          </ul>
+
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item ">
+              <a class="nav-link" href="{{ url_for('target_list')}}">Target list</a>
+            </li>
+            <li class="nav-item ">
+              <a class="nav-link" href="{{ url_for('target_random')}}">Random</a>
+            </li>
 
           </ul>
 

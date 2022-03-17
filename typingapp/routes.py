@@ -295,6 +295,13 @@ def home():
                                dictclass=dictclass
                                )
 
+@app.route("/tutorials")
+def tutorials():
+    """ """
+    return render_template("tutorials.html")
+
+    
+
 
 # ================ #
 #                  #
