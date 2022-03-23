@@ -49,6 +49,7 @@ DB_PATH  = os.path.join( io.IDR_PATH, "typingapp.db")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = f'sqlite:///{DB_PATH}'
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 
 
@@ -66,6 +67,9 @@ class Users( db.Model, UserMixin ):
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
     # password
     password_hash = db.Column(db.String(120), nullable=False)
+
+    # - Properties
+    config__lcplot = db.Column(db.String(100))
     
     # User can make Many Classification
 
@@ -398,11 +402,17 @@ def update_user(id):
     """ """
     form = UserForm()
     name_to_update = Users.query.get_or_404(id)
+    input_keys = list(request.form.keys())[0]
+        
     # 
     if request.method == "POST": # Similar to the other one. Did they do something
-        name_to_update.username  = request.form["username"]
-        name_to_update.name  = request.form["name"]
-        name_to_update.email  = request.form["email"]
+        if input_keys == "config__lcplot":
+            name_to_update.config__lcplot = request.form["config__lcplot"].strip()
+        else:
+            name_to_update.username  = request.form["username"]
+            name_to_update.name  = request.form["name"]
+            name_to_update.email  = request.form["email"]
+            name_to_update.email  = request.form["config__lcplot"]
         try:
             db.session.commit()
             flash("User Updated Successfully", category="success")
@@ -626,7 +636,11 @@ def target_page(name, warn_typing=True, warn_report=True):
 
     # - Storing the LC plot    #
     try:
-        figlc = t_.lightcurve.show(ax=axlc)
+        if current_user.config__lcplot == "None" or current_user.config__lcplot == None or current_user.config__lcplot == "flux":
+            figlc = t_.lightcurve.show(ax=axlc)
+        else:
+            figlc = t_.lightcurve.show(ax=axlc, inmag=True)
+            
         _ = figlc.savefig(buflc, format="png", dpi=250)
         lcplot = base64.b64encode(buflc.getbuffer()).decode("ascii")
     except:

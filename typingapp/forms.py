@@ -17,6 +17,9 @@ class UserForm( FlaskForm ):
     submit = SubmitField("Submit") # For the button
 
 
+    config__lcplot = StringField("config__lcplot")
+    
+
 # Create LoginForm
 class LoginForm( FlaskForm ):
     username = StringField("Username", validators=[DataRequired()] )

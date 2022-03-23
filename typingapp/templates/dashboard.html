@@ -2,13 +2,49 @@
 
 {% block content %}
 
-<h1> {{ current_user.username}}'s Dashboard </h1>
+<h1> {{ current_user.username }}'s Dashboard </h1>
 <br/><br/>
-<strong>Name</strong>: {{ current_user.name}}</h1><br/>
-<strong>Date Joined</strong>: {{ current_user.date_added}}</h1><br/>
+<strong>Name</strong>: {{ current_user.name }}</h1><br/>
+<strong>Date Joined</strong>: {{ current_user.date_added }}</h1><br/>
 <br/><br/>
 <a href="{{ url_for('update_user', id=current_user.id) }}" class="btn btn-warning"> Update </a>
 <a href="{{ url_for('logout') }}" class="btn btn-danger"> Logout </a>
 
+<br>
+
+
+
+<!-------------------->
+<!---   Config     --->
+<!-------------------->
+
+<div class="container mt-4">
+  <form method="post" action="/update/{{ current_user.id }}" >
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th scope="col">Setting</th>
+          <th scope="col">Configuration</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">LightCurve plot (current: {{ current_user.config__lcplot }})</th>
+          <td>
+            <div class="btn-group mb-2">
+              {% if current_user.config__lcplot == None or current_user.config__lcplot == 'flux' %}
+                <input type="submit" value=" flux " name="config__lcplot" class="btn btn-secondary btn-sm">
+                <input type="submit" value=" mag " name="config__lcplot" class="btn btn-outline-secondary btn-sm">
+              {% else %}
+                <input type="submit" value=" flux " name="config__lcplot" class="btn btn-outline-secondary btn-sm">
+                <input type="submit" value=" mag " name="config__lcplot" class="btn btn-secondary btn-sm">
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </form>
+</div>
 
 {% endblock %}
