@@ -363,9 +363,9 @@ def user_list():
 @app.route("/user/add", methods=["GET","POST"])
 def add_user():
     """ """
-    name = None
     form = UserForm()
     if form.validate_on_submit(): # If you submit, this happens
+        
         # query the Users-Database that have the inout user email and return the first one
         # This should return None if it is indeed unique
         user = Users.query.filter_by(username=form.username.data).first()
@@ -393,38 +393,61 @@ def add_user():
         form.email.data = ''
         form.password_hash.data = ''
         
-    our_users = Users.query.order_by(Users.date_added)
-    return render_template("add_user.html", form=form, name=name, our_users=our_users)
+    return render_template("add_user.html", form=form)
 
-@app.route("/update/<int:id>", methods=["GET","POST"])
+@app.route("/update/user", methods=["GET","POST"])
 @login_required 
-def update_user(id):
+def update_user():
     """ """
-    form = UserForm()
-    name_to_update = Users.query.get_or_404(id)
-    input_keys = list(request.form.keys())[0]
-        
+    name_to_update = Users.query.get_or_404(current_user.id)
     # 
     if request.method == "POST": # Similar to the other one. Did they do something
-        if input_keys == "config__lcplot":
+        input_keys = list(request.form.keys())
+        if len(input_keys)>0 and input_keys[0] == "config__lcplot":
             name_to_update.config__lcplot = request.form["config__lcplot"].strip()
         else:
-            name_to_update.username  = request.form["username"]
-            name_to_update.name  = request.form["name"]
-            name_to_update.email  = request.form["email"]
-            name_to_update.email  = request.form["config__lcplot"]
+            flash("Unknown configuration to change", category="warning")
+            
         try:
             db.session.commit()
-            flash("User Updated Successfully", category="success")
+            flash("Config changed successful", category="success")
+        except:
+            flash("Error: looks like threre was a problem... try again", category="error")
+
+    return redirect( url_for("dashboard") )
+
+
+@app.route("/update/password", methods=["GET","POST"])
+@login_required 
+def update_password():
+    """ """
+    form = UserForm()
+    #
+    if request.method == "POST": # Did they do something
+        if request.form["newpassword_hash"] != request.form["password_hash_matched"]:
+           flash("New Password do not match - Try again", category="error")
+           return redirect( url_for("update_password") ) 
+            
+        user = Users.query.get_or_404(current_user.id)
+        old_password = request.form["password_hash"]
+        if not check_password_hash(user.password_hash, old_password):
+            flash("Wrong Password - Try again", category="error")
+            return redirect( url_for("update_password") )
+        
+        hashed_pwd = generate_password_hash(request.form["newpassword_hash"], "sha256")
+        user.password_hash=hashed_pwd
+        try:
+            db.session.commit()
+            flash("Password Updated Successfully", category="success")
         except:
             flash("Error: looks like threre was a problem... try again", category="error")
             
         return redirect( url_for("dashboard") )
                                  
-    else: # Or just went to the page
-        return render_template("update_user.html", form=form,
-                                       name_to_update=name_to_update)
+    return render_template("update_password.html", form=form)
 
+
+    
 @app.route("/delete/<int:id>")
 @login_required 
 def delete_user(id):
