@@ -12,9 +12,7 @@ class UserForm( FlaskForm ):
     password_hash = PasswordField("Password", validators=[DataRequired(),
                                                     EqualTo('password_hash_matched',
                                                             "password must match")] )
-    newpassword_hash = PasswordField("New password", validators=[DataRequired(),
-                                                    EqualTo('password_hash_matched',
-                                                            "password must match")] )
+    newpassword_hash = PasswordField("New password")
 
     password_hash_matched = PasswordField("Confirm Password",
                                               validators=[DataRequired()]
