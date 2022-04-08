@@ -1,12 +1,12 @@
 # Basics
-#numpy==1.19.2
-#matplotlib==3.3.2
-#pandas==1.4.1
-#dask==2021.06.0
+numpy>=1.19.2
+matplotlib>=3.3.2
+pandas>=1.4.1
+dask>=2021.06.0
 
 # Almost Basics
-#astropy==4.0.2
-#sncosmo==2.3.0
+astropy>=4.0.2
+sncosmo>=2.3.0
 
 
 # My code
@@ -24,6 +24,7 @@ Flask-Migrate==3.1.0
 flask-nav==0.6
 Flask-SQLAlchemy==2.5.1
 Flask-WTF==0.15.1
+
 # App
 Werkzeug==1.0.1
 WTForms==2.3.3
