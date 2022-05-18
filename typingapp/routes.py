@@ -314,13 +314,11 @@ def home():
     current_classifications = pandas.read_sql_query("SELECT * FROM Classifications WHERE kind='typing'",
                                                     db.engine)
     # Remove the unclear
-    classifications = current_classifications[~(
-        current_classifications["value"].astype(str) == "unclear")]
+    classifications = current_classifications[~(current_classifications["value"].astype(str) == "unclear")]
     #
     nclassifications = pandas.DataFrame(classifications.groupby("user_id").size().sort_values(ascending=False),
                                         columns=["nclassifications"])
-    users = pandas.read_sql_query(
-        "SELECT * FROM Users", db.engine).set_index("id")
+    users = pandas.read_sql_query("SELECT * FROM Users", db.engine).set_index("id")
     nclassifications["name"] = users.loc[nclassifications.index]["name"]
     # Add reports
     current_report = pandas.read_sql_query("SELECT * FROM Classifications WHERE kind='report'",
