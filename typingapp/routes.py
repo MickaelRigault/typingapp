@@ -23,6 +23,7 @@ import ztfidr
 from ztfidr import io
 from ztfidr.target import Target
 
+SAMPLE = ztfidr.get_sample()
 
 # ================ #
 #                  #
@@ -694,11 +695,16 @@ def target_page(name, warn_typing=True, warn_report=True):
                       None: " z source: not given"}
 
     from matplotlib.figure import Figure
+    
     # DB
     targetname = escape(name)
     target = Targets.query.filter_by(name=targetname).first()
 
+    # = Requesting page = #
+    # input arguments 
     args = request.args
+
+    # Parsing inputs
     # annoying the False/True are strings...
     if eval(args.get("warn_typing", default=str(warn_typing), type=str)):
         t_typings = Classifications.query.filter_by(kind="typing",
@@ -714,9 +720,15 @@ def target_page(name, warn_typing=True, warn_report=True):
             flash(
                 f"You already reported {t_report.value} this target ({target.name})", category="info")
 
-    t_ = Target.from_name(name)
-    redshift, z_quality = t_.get_redshift()
-
+    # ---------- #
+    #    Data    #
+    # ---------- #
+    
+    lightcurve = SAMPLE.get_target_lightcurve(name)
+    spectra = np.atleast_1d(SAMPLE.get_target_spectra(name))
+    
+    redshift, zlabel = SAMPLE.data.loc[name][["redshift","redshift_source"]].values
+    t0, t0_err = SAMPLE.data.loc[name][["t0","t0_err"]].values
     # ------------ #
     # - LC Plot    #
     # ------------ #
@@ -725,19 +737,21 @@ def target_page(name, warn_typing=True, warn_report=True):
 
     # - Spectra Plots
     spectraplots = []
-    for spec_ in np.atleast_1d(t_.spectra):
+    for spec_ in np.atleast_1d(spectra):
         if spec_ is None or spec_.snidresult is None:
             continue
+        
         # Figure
         buf = BytesIO()
         fig = Figure(figsize=[9, 3])
-        # Data
-        phase, dphase = spec_.get_phase(
-            t_.salt2param["t0"]), t_.salt2param["t0_err"]
-        # - Adding phase on the LC plot
-        axlc.axvline(spec_.get_obsdate().datetime, ls="--", color="0.6", lw=1)
-
-        zlabel = ZQUALITY_LABEL[z_quality]
+        
+        # Phase
+        phase, dphase = spec_.get_phase(t0, redshift), t0_err
+        datetime = spec_.get_obsdate().datetime
+        
+        # -> Adding phase on the LC plot
+        axlc.axvline(datetime, ls="--", color="0.6", lw=1)
+        # -> Plot the spectrum
         _ = spec_.snidresult.show(fig=fig, label=spec_.filename.split("/")[-1],
                                   phase=phase, dphase=dphase, redshift=redshift, zlabel=zlabel
                                   ).savefig(buf, format="png", dpi=250)
@@ -746,9 +760,9 @@ def target_page(name, warn_typing=True, warn_report=True):
     # - Storing the LC plot    #
     try:
         if current_user.config__lcplot == "None" or current_user.config__lcplot == None or current_user.config__lcplot == "flux":
-            figlc = t_.lightcurve.show(ax=axlc)
+            figlc = lightcurve.show(ax=axlc)
         else:
-            figlc = t_.lightcurve.show(ax=axlc, inmag=True)
+            figlc = lightcurve.show(ax=axlc, inmag=True)
 
         _ = figlc.savefig(buflc, format="png", dpi=250)
         lcplot = base64.b64encode(buflc.getbuffer()).decode("ascii")
@@ -756,7 +770,9 @@ def target_page(name, warn_typing=True, warn_report=True):
         warnings.warn(f"Cannot build the LC for {name}")
         lcplot = None
 
-    del t_
+    # Delete the 
+    del lightcurve
+    del spectra
 
     #
     if target:
