@@ -1,37 +1,32 @@
-import base64
+
+
 import os
-from io import BytesIO
-
-from typingapp import app
-
-import warnings
-import numpy as np
+import base64
 import pandas
+import warnings
+
+import numpy as np
+from io import BytesIO
+from datetime import datetime
+
+
+# ================ #
+#                  #
+#   TypingApp      #
+#                  #
+# ================ #
+from typingapp import app
+from . import io as typingapp_io
 from .forms import UserForm, LoginForm
 
-
+# ================ #
+#                  #
+#     Flask        #
+#                  #
+# ================ #
 from flask import render_template, flash, redirect, url_for, request
 from flask_login import login_user, login_required, logout_user, current_user
 from markupsafe import escape
-
-# =========== #
-#             #
-#   ZTFIDR    #
-#             #
-# =========== #
-import ztfidr
-from ztfidr import io
-from ztfidr.target import Target
-
-SAMPLE = ztfidr.get_sample()
-
-# ================ #
-#                  #
-#    DATABASE      #
-#                  #
-# ================ #
-
-from datetime import datetime
 
 # DataBase Imports
 from sqlalchemy.sql import func
@@ -46,9 +41,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # -------------- #
 # LOCAL DATABASE #
 # -------------- #
-DB_PATH = os.path.join(io.IDR_PATH, "typingapp.db")
-
-app.config["SQLALCHEMY_DATABASE_URI"] = f'sqlite:///{DB_PATH}'
+app.config["SQLALCHEMY_DATABASE_URI"] = f'sqlite:///{typingapp_io.DB_PATH}'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
@@ -107,14 +100,26 @@ class Targets(db.Model):  # created by pandas
 
     id = db.Column(db.Integer, primary_key=True)
 
-    # max 100 caracter cannot be blank
+    # Name
     name = db.Column(db.String(100), nullable=False, unique=True)
+    name_iau = db.Column(db.String(100))
+    
     # Coordinates
     ra = db.Column(db.Float())
     dec = db.Column(db.Float())
+    
     # Redshift
     redshift = db.Column(db.Float())
-    z_quality = db.Column(db.Integer())
+    redshift_err = db.Column(db.Float())    
+    redshift_source = db.Column(db.String(100))
+    
+    # LC param
+    x1 = db.Column(db.Float())
+    x1_err = db.Column(db.Float())
+    c = db.Column(db.Float())
+    c_err = db.Column(db.Float())
+    fitprob = db.Column(db.Float())
+    
     # Typing
     auto_type = db.Column(db.String(100))
     auto_subtype = db.Column(db.String(100))
@@ -124,9 +129,7 @@ class Targets(db.Model):  # created by pandas
     # Host
     host_ra = db.Column(db.Float())
     host_dec = db.Column(db.Float())
-
-    #
-    #
+    host_dlr = db.Column(db.Float())
 
 
 NTARGETS = Targets.query.count()
@@ -136,8 +139,6 @@ NTARGETS = Targets.query.count()
 #   TARGET-INFO         #
 #                      #
 # ==================== #
-
-
 class Classifications(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
@@ -180,7 +181,7 @@ def load_user(user_id):
 # ================ #
 
 def get_classified(incl_unclear=False, type_isin=None,
-                   from_current_user="current"):
+                   by_current_user=True):
     """ 
     Parameters
     ----------
@@ -190,7 +191,7 @@ def get_classified(incl_unclear=False, type_isin=None,
     list of target name
     """
     typed_names = Classifications.query.filter_by(kind="typing")
-    if from_current_user:
+    if by_current_user:
         typed_names = typed_names.filter_by(user_id=current_user.id)
 
     if typed_names.count() == 0:
@@ -204,10 +205,12 @@ def get_classified(incl_unclear=False, type_isin=None,
         typed_names = typed_names.filter(
             Classifications.value.in_(list(np.atleast_1d(type_isin))))
 
-    return np.concatenate(typed_names.with_entities(Classifications.target_name).distinct().all())
+    return np.concatenate(typed_names.with_entities(Classifications.target_name
+                                                        ).distinct().all())
 
 
-def get_not_classified(incl_unclear=False, type_isin=None, as_basequery=False):
+def get_not_classified(incl_unclear=False, type_isin=None, as_basequery=False,
+                           by_current_user=True):
     """ 
     Parameters
     ----------
@@ -216,8 +219,9 @@ def get_not_classified(incl_unclear=False, type_isin=None, as_basequery=False):
     -------
     list of target name
     """
-    isclassified = get_classified(
-        incl_unclear=incl_unclear, type_isin=type_isin)
+    isclassified = get_classified(incl_unclear=incl_unclear, type_isin=type_isin,
+                                 by_current_user=by_current_user)
+    
     if isclassified is not None and len(isclassified) > 0:
         basequery = Targets.query.filter(Targets.name.notin_(isclassified))
     else:
@@ -225,6 +229,7 @@ def get_not_classified(incl_unclear=False, type_isin=None, as_basequery=False):
 
     if as_basequery:
         return basequery
+    
     return np.concatenate(basequery.with_entities(Targets.name).all())
 
 def get_mytargets(user_id):
@@ -238,28 +243,6 @@ def get_mytargets(user_id):
 #    TOOLS DB      #
 #                  #
 # ================ #
-
-def build_targets_db(iloc_range=None,
-                     tablename="targets"):
-    """ """
-    # Data to Store
-    data = io.get_targets_data()
-    target_db = data.reset_index().rename({"index": "name",
-                                           "sn_ra": "ra", "sn_dec": "dec",
-                                           "type": "auto_type", "subtype": "auto_subtype",
-                                           "p(type)": "auto_type_prob", "p(subtype|type)": "auto_subtype_prob",
-                                           }, axis=1)
-    target_db = target_db.reset_index().rename({"index": "id"}, axis=1)
-
-    if iloc_range is None:
-        to_store = target_db
-    else:
-        to_store = target_db.iloc[iloc_range[0]:iloc_range[1]]
-
-    # Actual storing
-    to_store.to_sql(tablename, db.engine, if_exists="replace")
-
-
 def merging_userdb(filepath_db):
     """ """
     import sqlite3
@@ -720,13 +703,14 @@ def target_page(name, warn_typing=True, warn_report=True):
 
     # ---------- #
     #    Data    #
-    # ---------- #
-    
-    lightcurve = SAMPLE.get_target_lightcurve(name)
-    spectra = np.atleast_1d(SAMPLE.get_target_spectra(name))
-    
-    redshift, zlabel = SAMPLE.data.loc[name][["redshift","redshift_source"]].values
-    t0, t0_err = SAMPLE.data.loc[name][["t0","t0_err"]].values
+    # ---------- #    
+    lightcurve = typingapp_io.get_target_lightcurve(name)
+    spectra = typingapp_io.get_target_spectra(name)
+    t0, t0_err, redshift, zlabel = typingapp_io.get_target_data(name)[["t0","t0_err",
+                                                          "redshift",
+                                                          "redshift_source"]
+                                                         ].values
+
     # ------------ #
     # - LC Plot    #
     # ------------ #
@@ -735,7 +719,8 @@ def target_page(name, warn_typing=True, warn_report=True):
 
     # - Spectra Plots
     spectraplots = []
-    for spec_ in np.atleast_1d(spectra):
+    for spec_ in spectra:
+        print (spec_)
         if spec_ is None or spec_.snidresult is None:
             continue
         

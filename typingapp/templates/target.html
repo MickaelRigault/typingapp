@@ -49,9 +49,37 @@
         </div>
         <div class="col-auto me-auto">
             <h4 style="color:#CCD1D1;">
-              redshift: {{ "{:,.4f}".format(target.redshift) }} (qual: {{ target.z_quality }})
+              redshift: {{ "{:,.4f}".format(target.redshift) }} ({{ target.redshift_source }})
             </h4>
         </div>
+
+	<div class="col-auto me-auto">
+	  <h4 style="color:#CCD1D1;">
+	  {% if target.x1 < -4 %}
+	    stretch: very fast (<-4)
+	  {% elif target.x1 > 4 %}
+	    stretch: very slow (>+4)
+	  {% else %}
+	    stretch: normal
+	  {% endif %}
+	  </h4>
+	</div>
+
+
+	<div class="col-auto me-auto">
+	  <h4 style="color:#CCD1D1;">
+	  {% if target.c < -0.3 %}
+	    color: very blue (<-0.3)
+	  {% elif target.c > 0.8 %}
+	     color: very red (>0.8)
+	  {% elif target.c > 0.3 %}
+	    color: red (0.3< c < 0.08)
+	  {% else %}
+	    color: normal
+	  {% endif %}
+	  </h4>
+	</div>
+
 
    </div>
 </div>
@@ -113,7 +141,7 @@
             <input type="submit" value=" Report:" name="report" class="btn btn-danger disabled">
 	    <input type="submit" value=" Redshift " name="report:target:redshift" class="btn btn-outline-danger">
 	    <input type="submit" value=" No Spectra " name="report:target:nospectra" class="btn btn-outline-danger">
-	    <input type="submit" value=" No Lightcurve " name="report:target:nolightcurve" class="btn btn-outline-danger">	    
+	    <input type="submit" value=" No Lightcurve " name="report:target:nolightcurve" class="btn btn-outline-danger">
 	    <input type="submit" value="  Target  " name="report:target:target" class="btn btn-outline-secondary">
           </div>
         </div>
@@ -156,7 +184,7 @@
   </form>
 
     <!--- Show the LC --->
-  {% if lcplot != None %}    
+  {% if lcplot != None %}
   <div class="row justify-content-md-center">
     <img src='data:image/png;base64,{{ lcplot }}' />
   </div">
