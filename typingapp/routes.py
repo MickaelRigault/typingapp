@@ -210,7 +210,8 @@ def get_classified(incl_unclear=False, type_isin=None,
 
 
 def get_not_classified(incl_unclear=False, type_isin=None, as_basequery=False,
-                           by_current_user=True):
+                       by_current_user=True,
+                       skip_classified_more_than=5):
     """ 
     Parameters
     ----------
@@ -219,8 +220,18 @@ def get_not_classified(incl_unclear=False, type_isin=None, as_basequery=False,
     -------
     list of target name
     """
+    # Classified by user
     isclassified = get_classified(incl_unclear=incl_unclear, type_isin=type_isin,
                                  by_current_user=by_current_user)
+    
+    if skip_classified_more_than is not None:
+        current_classifications = pandas.read_sql_query("SELECT * FROM Classifications WHERE kind='typing' AND value!='unclear'",
+                                                        db.engine)
+
+        nclassification = current_classifications.groupby("target_name").size()
+        is_classified_byother = nclassification[nclassification >= skip_classified_more_than].index
+        # could be doublon here, but it doesn't matter
+        isclassified = list(isclassified) + list(is_classified_byother)
     
     if isclassified is not None and len(isclassified) > 0:
         basequery = Targets.query.filter(Targets.name.notin_(isclassified))
@@ -770,8 +781,9 @@ def target_page(name, warn_typing=True, warn_report=True):
 
 @app.route("/target/random")
 @login_required
-def target_random():
+def target_random(skip_classified_more_than=2):
     """ """
     targetname = get_not_classified(
-        as_basequery=True).order_by(func.random()).first().name
+        as_basequery=True, skip_classified_more_than=skip_classified_more_than).order_by(func.random()).first().name
+    
     return target_page(targetname)

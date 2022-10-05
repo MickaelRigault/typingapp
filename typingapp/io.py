@@ -57,7 +57,8 @@ def get_input_targetdata():
                        right_index=True, how="left")
     return alldata.reset_index().rename({"index":"name"}, axis=1
                  ).reset_index().rename({"index":"id"}, axis=1
-                 ).rename({"type":"auto_type",
+                 ).rename({"ztfname":"name",
+                           "type":"auto_type",
                              "type": "auto_type", 
                              "subtype": "auto_subtype",
                              "p(type)": "auto_type_prob", 
