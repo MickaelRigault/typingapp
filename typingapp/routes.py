@@ -9,16 +9,6 @@ import numpy as np
 from io import BytesIO
 from datetime import datetime
 
-
-# ================ #
-#                  #
-#   TypingApp      #
-#                  #
-# ================ #
-from typingapp import app
-from . import io as typingapp_io
-from .forms import UserForm, LoginForm
-
 # ================ #
 #                  #
 #     Flask        #
@@ -36,6 +26,16 @@ from flask_migrate import Migrate
 # user logins
 from flask_login import UserMixin, LoginManager
 from werkzeug.security import generate_password_hash, check_password_hash
+
+
+# ================ #
+#                  #
+#   TypingApp      #
+#                  #
+# ================ #
+from typingapp import app
+from . import io as typingapp_io
+from .forms import UserForm, LoginForm
 
 
 # -------------- #
@@ -131,9 +131,6 @@ class Targets(db.Model):  # created by pandas
     host_dec = db.Column(db.Float())
     host_dlr = db.Column(db.Float())
 
-
-NTARGETS = Targets.query.count()
-
 # ==================== #
 #                      #
 #   TARGET-INFO         #
@@ -179,6 +176,12 @@ def load_user(user_id):
 #    TOOLS         #
 #                  #
 # ================ #
+def get_targets(to_consider=True):
+    """ """
+    targets = Targets.query
+    if to_consider:
+        targets = targets.filter( Targets.name.in_(TARGETS_TO_CONSIDER) )
+    return targets
 
 def get_classified(incl_unclear=False, type_isin=None,
                    by_current_user=True):
@@ -232,16 +235,17 @@ def get_not_classified(incl_unclear=False, type_isin=None, as_basequery=False,
         is_classified_byother = nclassification[nclassification >= skip_classified_more_than].index
         # could be doublon here, but it doesn't matter
         isclassified = list(isclassified) + list(is_classified_byother)
-    
+
+
+    # Targets
+    targets = get_targets(to_consider=True)
     if isclassified is not None and len(isclassified) > 0:
-        basequery = Targets.query.filter(Targets.name.notin_(isclassified))
-    else:
-        basequery = Targets.query
+        targets = targets.filter(Targets.name.notin_(isclassified))
 
     if as_basequery:
-        return basequery
+        return targets
     
-    return np.concatenate(basequery.with_entities(Targets.name).all())
+    return np.concatenate( targets.with_entities(Targets.name).all() )
 
 def get_mytargets(user_id):
     """ """
@@ -263,10 +267,13 @@ def merging_userdb(filepath_db):
     #
     # - Current
     current_users = pandas.read_sql_query("SELECT * FROM Users", db.engine)
+    
     # -> new
     newuser = pandas.read_sql_query("SELECT * FROM Users", connew)
+
     if len(newuser) > 1:
         raise NotImplementedError("Only 1 user DB merge implemented.")
+
     newuser = newuser.iloc[0]
     newuser_id = newuser["id"] + \
         current_users["id"].max()  # will need it later
@@ -301,12 +308,22 @@ def merging_userdb(filepath_db):
 #    ROUTES        #
 #                  #
 # ================ #
+TARGETS_TO_CONSIDER = typingapp_io.get_targets(redshift_range=[0,0.04],
+                                               first_spec_phase=5,
+                                               ndetections=3)
+    
+NTARGETS = len(TARGETS_TO_CONSIDER)
 
+    
 @app.route("/")
 def home():
     """ """
     current_classifications = pandas.read_sql_query("SELECT * FROM Classifications WHERE kind='typing'",
                                                     db.engine)
+    # Limit to the one to consider.
+    current_classifications = current_classifications[current_classifications["target_name"].isin(TARGETS_TO_CONSIDER)]
+    
+    
     # Remove the unclear
     classifications = current_classifications[~(current_classifications["value"].astype(str) == "unclear")]
     #
@@ -336,7 +353,8 @@ def home():
     return render_template("home.html",
                            atleast1_classifications=atleast1_classifications,
                            atleast2_classifications=atleast2_classifications,
-                           dictclass=dictclass
+                           dictclass=dictclass,
+                           ntargets=NTARGETS,
                            )
 
 
@@ -527,8 +545,8 @@ def delete_user(id):
 @login_required
 def delete_classification(id):
     """ """
-    classification_to_delete = Classifications.query.get_or_404(
-        id)  # get the DB entry associated to the id
+    # get the DB entry associated to the id
+    classification_to_delete = Classifications.query.get_or_404(id)  
 
     name = None  # because first time we load, it will be None.
     try:
@@ -654,7 +672,7 @@ def search():
 @login_required
 def target_list():
     """ """
-    targets = Targets.query.order_by(Targets.id)
+    targets = get_targets(to_consider=True).order_by(Targets.id)
     return render_template("target_list.html", targets=targets)
 
 
@@ -663,8 +681,8 @@ def target_list():
 def my_target_list():
     """ """
     list_of_names = get_mytargets(current_user.id).target_name.astype("string").values
-    targets = Targets.query.filter( Targets.name.in_(list_of_names)
-                                  ).order_by(Targets.id)
+    targets = get_targets(to_consider=False).filter( Targets.name.in_(list_of_names)
+                                                    ).order_by(Targets.id)
 
     return render_template("target_list.html", targets=targets)
 
@@ -785,5 +803,5 @@ def target_random(skip_classified_more_than=2):
     """ """
     targetname = get_not_classified(
         as_basequery=True, skip_classified_more_than=skip_classified_more_than).order_by(func.random()).first().name
-    
+    print(targetname)
     return target_page(targetname)

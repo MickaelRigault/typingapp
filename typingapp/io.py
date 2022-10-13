@@ -18,6 +18,16 @@ SAMPLE = ztfidr.get_sample()
 #  Data For App   #
 #                 #
 # =============== #
+def get_targets(redshift_range=None, exclude_targets=None,
+                    first_spec_phase=None, **kwargs):
+    """ get targets to consider for the application. """
+    data = SAMPLE.get_data(redshift_range=redshift_range,
+                               exclude_targets=exclude_targets,
+                               first_spec_phase=first_spec_phase,
+                               **kwargs)
+    return list(data.index)
+
+
 def get_target_lightcurve(name):
     """ the target lightcurve. """
     return SAMPLE.get_target_lightcurve(name)
@@ -39,8 +49,8 @@ def get_target_data(name):
 def get_input_targetdata():
     """ reads data from the ztfcosmoidr using ztfidr and returns 
     a dataframe """
-    data = io.get_targets_data()
-    host = io.get_host_data().xs("global", axis=1)[["host_ra","host_dec","host_dlr"]]
+    data = SAMPLE.data
+    host = io.get_host_data()[["host_ra","host_dec","host_dlr"]]
     autotyping = io.get_autotyping()
 
     sndata = data[["ra","dec",
@@ -65,20 +75,6 @@ def get_input_targetdata():
                              "p(subtype|type)": "auto_subtype_prob",
                              "iau_name":"name_iau"
                             }, axis=1)
-    data = io.get_targets_data()
-    host = io.get_host_data().xs("global", axis=1)[["host_ra","host_dec","host_dlr"]]
-    autotyping = io.get_autotyping()
-
-    sndata = data[["ra","dec",
-                  "redshift","redshift_err",
-                  "redshift_source",
-                  "x1","x1_err",
-                  "c","c_err",
-                  "fitprob", "iau_name"
-                 ]]
-    extra = host.merge(autotyping, left_index=True, right_index=True, how="outer")
-    alldata = sndata.merge(sndata, left_index=True, right_index=True, how="outer")
-    return alldata
 
 def build_targets_db():
     """ """

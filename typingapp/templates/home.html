@@ -6,7 +6,7 @@
 <br>
 <div class="container">
   <div class="row justify-content-center fs-3 mb-2">
-    Classifications Made
+    Classifications Made | {{ "{:,d}".format(ntargets) }} targets
   </div>
 </div>
 
@@ -24,6 +24,7 @@
     aria-valuemin="0" aria-valuemax="100">
     {{ "{:,.1f}".format(atleast1_classifications) }}%
   </div>
+
 </div>
 
 <br>
