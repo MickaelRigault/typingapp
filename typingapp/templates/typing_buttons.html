@@ -1,0 +1,66 @@
+<form method="post" action="/classify/{{ target.id }}" >
+
+    <!---   First Raw   --->
+    <div class="btn-toolbar justify-content-between container-fluid" role="toolbar" aria-label="Toolbar with button groups">
+        <!-------------------->
+        <!---   Ia block   --->
+        <!-------------------->
+        <div class="input-group">
+
+            <div class="btn-group mb-2 me-2" role="group" aria-label="First group">
+                <input type="submit" value=" SN Ia " name="typing" class="btn btn-success">
+            </div>
+            <!--- Ia subclass  --->
+            <div class="btn-group mb-2" role="group" aria-label="Second group">
+                <input type="submit" value=" Ia-norm  " name="typing" class="btn btn-outline-success">
+                <input type="submit" value="  Ia-91T  " name="typing" class="btn btn-outline-success">
+                <input type="submit" value=" Ia-91bg  " name="typing" class="btn btn-outline-success">
+                <input type="submit" value=" Ia-other " name="typing" class="btn btn-outline-success">
+            </div>
+        </div>
+        <!-------------------->
+        <!--- Unclear block--->
+        <!-------------------->
+        <div class="input-group">
+            <div class="btn-group mb-2 me-2" role="group" aria-label="First group">
+              <input type="submit" value=" Unclear " name="typing" class="btn btn-secondary">
+            </div>
+        </div>
+        <!-------------------->
+        <!--- Not Ia block --->
+        <!-------------------->
+        <div class="input-group">
+            <div class="btn-group mb-2 me-2" role="group" aria-label="First group">
+              <input type="submit" value="Not Ia " name="typing" class="btn btn-warning">
+            </div>
+            <!-- notIa subclass -->
+            <div class="btn-group mb-2" role="group" aria-label="Second group">
+                <input type="submit" value="  II   " name="typing" class="btn btn-outline-warning">
+                <input type="submit" value=" Ib/c  " name="typing" class="btn btn-outline-warning">
+                <input type="submit" value="  Gal  " name="typing" class="btn btn-outline-warning">
+                <input type="submit" value=" other " name="typing" class="btn btn-outline-warning">
+            </div>
+        </div> <!---  End Block non-Ia --->
+    </div> <!---  End First Raw   --->
+
+    <!--- Second Raw --->
+    <div class="btn-toolbar justify-content-between container-fluid" role="toolbar" aria-label="Toolbar with button groups">
+
+        <div class="input-group">
+          <div class="input-group-prepend mb-2 me-2">
+            <input type="submit" value=" Report:" name="report" class="btn btn-danger disabled">
+	    <input type="submit" value=" Redshift " name="report:target:redshift" class="btn btn-outline-danger">
+	    <input type="submit" value=" No Spectra " name="report:target:nospectra" class="btn btn-outline-danger">
+	    <input type="submit" value=" No Lightcurve " name="report:target:nolightcurve" class="btn btn-outline-danger">
+	    <input type="submit" value=" Bad Target " name="report:target:badtarget" class="btn btn-outline-danger">
+	    <input type="submit" value="  Favorite  " name="report:target:target" class="btn btn-outline-secondary">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <div class="input-group-prepend  mb-4">
+            <input type="submit" value="  Skip  " name="skip" class="btn btn-outline-dark">
+          </div>
+        </div>
+    </div>
+</form>

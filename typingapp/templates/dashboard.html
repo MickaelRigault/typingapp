@@ -51,6 +51,26 @@
             </div>
           </td>
         </tr>
+        <tr>
+          <th scope="row">Status</th>
+          <td>
+            <div class="btn-group mb-2">
+              {% if current_user.config__reviewstatus == None or current_user.config__reviewstatus == 'typer' %}
+                <input type="submit" value=" typer " name="config__reviewstatus" class="btn btn-secondary btn-sm">
+                <input type="submit" value=" reviewer " name="config__reviewstatus" class="btn btn-outline-secondary btn-sm">
+                <input type="submit" value=" arbiter " name="config__reviewstatus" class="btn btn-outline-secondary btn-sm">
+              {% elif current_user.config__reviewstatus == 'reviewer' %}
+                <input type="submit" value=" typer " name="config__reviewstatus" class="btn btn-outline-secondary btn-sm">
+                <input type="submit" value=" reviewer " name="config__reviewstatus" class="btn btn-secondary btn-sm">
+                <input type="submit" value=" arbiter " name="config__reviewstatus" class="btn btn-outline-secondary btn-sm">
+              {% else %}
+                <input type="submit" value=" typer " name="config__reviewstatus" class="btn btn-outline-secondary btn-sm">
+                <input type="submit" value=" reviewer " name="config__reviewstatus" class="btn btn-outline-secondary btn-sm">
+                <input type="submit" value=" arbiter " name="config__reviewstatus" class="btn btn-secondary btn-sm">
+              {% endif %}
+            </div>
+          </td>
+        </tr>
         <!---   User     --->
         <tr>
           <th scope="row">Change Password</th>

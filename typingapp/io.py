@@ -10,7 +10,7 @@ DB_PATH = os.path.join(io.IDR_PATH, "typingapp.db")
 
 # DataSource
 SAMPLE = ztfidr.get_sample()
-
+TYPINGS = io.get_target_typing()
 
 
 # =============== #
@@ -18,14 +18,14 @@ SAMPLE = ztfidr.get_sample()
 #  Data For App   #
 #                 #
 # =============== #
-def get_targets(redshift_range=None, exclude_targets=None,
+def get_data(redshift_range=None, exclude_targets=None,
                     first_spec_phase=None, **kwargs):
     """ get targets to consider for the application. """
     data = SAMPLE.get_data(redshift_range=redshift_range,
                                exclude_targets=exclude_targets,
                                first_spec_phase=first_spec_phase,
                                **kwargs)
-    return list(data.index)
+    return data
 
 
 def get_target_lightcurve(name):

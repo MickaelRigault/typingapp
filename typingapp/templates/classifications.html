@@ -33,7 +33,7 @@
         </tr>
     </thead>
     <tbody>
-        {% for classification in classifications %}
+        {% for classification in classifications | reverse %}
             <tr>
                 <th scope="row">{{ classification.id}}</th>
                 <td>{{ classification.user_id}}</td>

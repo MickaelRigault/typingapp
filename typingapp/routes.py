@@ -1,5 +1,4 @@
 
-
 import os
 import base64
 import pandas
@@ -46,6 +45,18 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 
+# -------------- #
+# DATA           #
+# -------------- #
+
+
+DATA_TO_CONSIDER = typingapp_io.get_data(redshift_range=[0,0.06],
+                                         first_spec_phase=5,
+                                         ndetections=3)
+TARGETS_TO_CONSIDER = list(DATA_TO_CONSIDER.index)
+LIST_OF_CLASSIFICATIONS = DATA_TO_CONSIDER["classification"].unique()
+NTARGETS = len(TARGETS_TO_CONSIDER)
+
 # ==================== #
 #                      #
 #   USERS              #
@@ -65,6 +76,7 @@ class Users(db.Model, UserMixin):
 
     # - Properties
     config__lcplot = db.Column(db.String(100))
+    config__reviewstatus = db.Column(db.String(100))
 
     # User can make Many Classification
 
@@ -103,23 +115,23 @@ class Targets(db.Model):  # created by pandas
     # Name
     name = db.Column(db.String(100), nullable=False, unique=True)
     name_iau = db.Column(db.String(100))
-    
+
     # Coordinates
     ra = db.Column(db.Float())
     dec = db.Column(db.Float())
-    
+
     # Redshift
     redshift = db.Column(db.Float())
-    redshift_err = db.Column(db.Float())    
+    redshift_err = db.Column(db.Float())
     redshift_source = db.Column(db.String(100))
-    
+
     # LC param
     x1 = db.Column(db.Float())
     x1_err = db.Column(db.Float())
     c = db.Column(db.Float())
     c_err = db.Column(db.Float())
     fitprob = db.Column(db.Float())
-    
+
     # Typing
     auto_type = db.Column(db.String(100))
     auto_subtype = db.Column(db.String(100))
@@ -175,20 +187,76 @@ def load_user(user_id):
 #                  #
 #    TOOLS         #
 #                  #
-# ================ #
-def get_targets(to_consider=True):
-    """ """
-    targets = Targets.query
-    if to_consider:
-        targets = targets.filter( Targets.name.in_(TARGETS_TO_CONSIDER) )
-    return targets
-
-def get_classified(incl_unclear=False, type_isin=None,
-                   by_current_user=True):
-    """ 
+# ================ #    
+def get_targets(to_consider=True, classifications=None, as_list=False):
+    """ get the targets (names or db entry) you should be looking at.
+    
     Parameters
     ----------
+    to_consider: bool
+        limit the target you should be looking at.
+
+    classifications: list
+        classifications you should be looking at.
+
+    as_list: bool
+        if True this is the list of names. If False, the db.query.
+
+    Returns
+    -------
+    list or query
+    """
+    targets = Targets.query
+
+    if classifications is not None:
+        to_consider = True
+        classifications = np.atleast_1d(classifications)
+        targets_to_to_consider = list(DATA_TO_CONSIDER[DATA_TO_CONSIDER["classification"].isin(classifications)].index)
+    else:
+        targets_to_to_consider= TARGETS_TO_CONSIDER
     
+    if as_list:
+        return targets_to_to_consider
+    
+    if to_consider:
+        targets = targets.filter( Targets.name.in_(targets_to_to_consider) )
+
+    return targets
+
+
+@app.route("/user/targets")
+@login_required
+def get_my_targets_consider(as_list=False):
+    """ returns the list of targets to consider. """
+    status, classifications = get_user_status()
+    targets = get_targets(classifications=classifications, as_list=as_list)
+    return targets
+
+@app.route("/user/status")
+@login_required
+def get_user_status():
+    """ returns the user review status and the classifications s.he should look at. """
+    me_user = Users.query.get_or_404(current_user.id)
+    
+    if me_user.config__reviewstatus == None or me_user.config__reviewstatus == 'typer':
+        status = 'typer'
+        classifications = ["None"]
+    elif me_user.config__reviewstatus == 'reviewer':
+        status = 'reviewer'
+        classifications = [k for k in LIST_OF_CLASSIFICATIONS if k not in ["None","confusing"]]
+    else: # arbiter
+        status = 'arbiter'
+        classifications = ["confusing"]
+        
+    return status, classifications
+
+    
+def get_classified(incl_unclear=False, type_isin=None,
+                   by_current_user=True):
+    """
+    Parameters
+    ----------
+
     Returns
     -------
     list of target name
@@ -215,10 +283,10 @@ def get_classified(incl_unclear=False, type_isin=None,
 def get_not_classified(incl_unclear=False, type_isin=None, as_basequery=False,
                        by_current_user=True,
                        skip_classified_more_than=5):
-    """ 
+    """
     Parameters
     ----------
-    
+
     Returns
     -------
     list of target name
@@ -226,7 +294,7 @@ def get_not_classified(incl_unclear=False, type_isin=None, as_basequery=False,
     # Classified by user
     isclassified = get_classified(incl_unclear=incl_unclear, type_isin=type_isin,
                                  by_current_user=by_current_user)
-    
+
     if skip_classified_more_than is not None:
         current_classifications = pandas.read_sql_query("SELECT * FROM Classifications WHERE kind='typing' AND value!='unclear'",
                                                         db.engine)
@@ -238,13 +306,13 @@ def get_not_classified(incl_unclear=False, type_isin=None, as_basequery=False,
 
 
     # Targets
-    targets = get_targets(to_consider=True)
+    targets = get_my_targets_consider(as_list=False)
     if isclassified is not None and len(isclassified) > 0:
         targets = targets.filter(Targets.name.notin_(isclassified))
 
     if as_basequery:
         return targets
-    
+
     return np.concatenate( targets.with_entities(Targets.name).all() )
 
 def get_mytargets(user_id):
@@ -252,7 +320,7 @@ def get_mytargets(user_id):
     return pandas.read_sql_query("SELECT * FROM Classifications WHERE value='target:target'"+
                                 f" and user_id = {user_id}",
                                  db.engine)
-    
+
 # ================ #
 #                  #
 #    TOOLS DB      #
@@ -267,7 +335,7 @@ def merging_userdb(filepath_db):
     #
     # - Current
     current_users = pandas.read_sql_query("SELECT * FROM Users", db.engine)
-    
+
     # -> new
     newuser = pandas.read_sql_query("SELECT * FROM Users", connew)
 
@@ -308,32 +376,51 @@ def merging_userdb(filepath_db):
 #    ROUTES        #
 #                  #
 # ================ #
-TARGETS_TO_CONSIDER = typingapp_io.get_targets(redshift_range=[0,0.04],
-                                               first_spec_phase=5,
-                                               ndetections=3)
-    
-NTARGETS = len(TARGETS_TO_CONSIDER)
 
-    
 @app.route("/")
+@login_required
 def home():
     """ """
+    # my home
+    status, _ = get_user_status()
+    my_targets_to_consider = get_my_targets_consider(as_list=True)
+    ntargets = len(my_targets_to_consider)
+
+
+    # my classifications to do
     current_classifications = pandas.read_sql_query("SELECT * FROM Classifications WHERE kind='typing'",
                                                     db.engine)
-    # Limit to the one to consider.
-    current_classifications = current_classifications[current_classifications["target_name"].isin(TARGETS_TO_CONSIDER)]
-    
-    
+    current_classifications = current_classifications[current_classifications["target_name"].isin(my_targets_to_consider)]
     # Remove the unclear
     classifications = current_classifications[~(current_classifications["value"].astype(str) == "unclear")]
+
+    
+    # my reports
+    current_report = pandas.read_sql_query("SELECT * FROM Classifications WHERE kind='report'",
+                                           db.engine)
+    current_report = current_report[current_report["target_name"].isin(my_targets_to_consider)]
+
+
+    print("status ", status)
+    if status in ["reviewer","arbiter"]:
+
+        data = current_report[current_report["value"].str.startswith("arbiter:")]
+        progress = data["target_name"].nunique()  / ntargets * 100
+    else:
+        target_classifications = classifications.groupby("target_name").size()
+        progress = np.sum( target_classifications >= 2)/ntargets * 100
+        
+    print(progress)
+    
+    
+    # What People did:
     #
     nclassifications = pandas.DataFrame(classifications.groupby("user_id").size().sort_values(ascending=False),
                                         columns=["nclassifications"])
     users = pandas.read_sql_query("SELECT * FROM Users", db.engine).set_index("id")
     nclassifications["name"] = users.loc[nclassifications.index]["name"]
+    
     # Add reports
-    current_report = pandas.read_sql_query("SELECT * FROM Classifications WHERE kind='report'",
-                                           db.engine)
     nclassifications = pandas.merge(nclassifications,
                                     pandas.DataFrame(current_report.groupby(
                                         "user_id").size(), columns=["nreports"]),
@@ -342,19 +429,13 @@ def home():
     dictclass = nclassifications.T.to_dict()
 
     # n-classifications
-    target_classifications = classifications.groupby("target_name").size()
-    atleast1_classifications = np.sum(
-        target_classifications >= 1)/NTARGETS * 100
-    atleast2_classifications = np.sum(
-        target_classifications >= 2)/NTARGETS * 100
 
     # per user classifications
 
-    return render_template("home.html",
-                           atleast1_classifications=atleast1_classifications,
-                           atleast2_classifications=atleast2_classifications,
+    return render_template("home.html", status=status,
                            dictclass=dictclass,
-                           ntargets=NTARGETS,
+                           ntargets=ntargets,
+                           progress=float(progress),
                            )
 
 
@@ -470,6 +551,9 @@ def update_user():
         if len(input_keys) > 0 and input_keys[0] == "config__lcplot":
             name_to_update.config__lcplot = request.form["config__lcplot"].strip(
             )
+        if len(input_keys) > 0 and input_keys[0] == "config__reviewstatus":
+            name_to_update.config__reviewstatus = request.form["config__reviewstatus"].strip(
+            )
         else:
             flash("Unknown configuration to change", category="warning")
 
@@ -546,7 +630,7 @@ def delete_user(id):
 def delete_classification(id):
     """ """
     # get the DB entry associated to the id
-    classification_to_delete = Classifications.query.get_or_404(id)  
+    classification_to_delete = Classifications.query.get_or_404(id)
 
     name = None  # because first time we load, it will be None.
     try:
@@ -607,10 +691,10 @@ def classify(id, flash_classified=False):
             db.session.add(classification)
             db.session.commit()
             return redirect(url_for("target_random"))
-
+        
         elif "report:" in input_keys:  # report
             kind = "report"
-            value = input_keys.replace("report:", "")
+            value = input_keys.replace(f"{kind}:", "")
 
             classification = Classifications(user_id=current_user.id,
                                              target_id=id,
@@ -619,16 +703,21 @@ def classify(id, flash_classified=False):
                                              value=value.strip().lower()
                                              )
 
-            flash(f"You reported {value} for {target.name}",
-                  category="warning")
             db.session.add(classification)
             db.session.commit()
+            if value.startswith("review") or value.startswith("arbiter"): # good to go
+                return redirect(url_for("target_random"))
+
+            flash(f"You reported {value} for {target.name}",
+                  category="warning")
             return redirect(url_for(f"target_page", name=target.name,
                                     warn_report=False))
-
+            
+        
         elif "skip" in request.form:
             flash(f"You skipped {target.name} | no db update",
                   category="secondary")
+            
             return redirect(url_for("target_random"))
 
     flash(
@@ -697,7 +786,7 @@ def targetid_page(id):
 
 @app.route("/target/<name>")
 @login_required
-def target_page(name, warn_typing=True, warn_report=True):
+def target_page(name, warn_typing=True, warn_report=True, status=None):
     """ """
     ZQUALITY_LABEL = {2: " z source: host",
                       1: " z source: sn",
@@ -705,13 +794,18 @@ def target_page(name, warn_typing=True, warn_report=True):
                       None: " z source: not given"}
 
     from matplotlib.figure import Figure
-    
+
+    if status is None:
+        status, _ = get_user_status()
     # DB
     targetname = escape(name)
     target = Targets.query.filter_by(name=targetname).first()
-
+    target_data = DATA_TO_CONSIDER.loc[target.name]
+    target_typing = typingapp_io.TYPINGS.loc[target.name]
+    typing_info = dict( zip(target_typing["typing"],target_typing["ntypings"]) )
+    del target_typing
     # = Requesting page = #
-    # input arguments 
+    # input arguments
     args = request.args
 
     # Parsing inputs
@@ -732,13 +826,10 @@ def target_page(name, warn_typing=True, warn_report=True):
 
     # ---------- #
     #    Data    #
-    # ---------- #    
+    # ---------- #
     lightcurve = typingapp_io.get_target_lightcurve(name)
     spectra = typingapp_io.get_target_spectra(name)
-    t0, t0_err, redshift, zlabel = typingapp_io.get_target_data(name)[["t0","t0_err",
-                                                          "redshift",
-                                                          "redshift_source"]
-                                                         ].values
+    t0, t0_err, redshift, zlabel = target_data[["t0","t0_err", "redshift", "source"]].values
 
     # ------------ #
     # - LC Plot    #
@@ -752,15 +843,15 @@ def target_page(name, warn_typing=True, warn_report=True):
         print (spec_)
         if spec_ is None or spec_.snidresult is None:
             continue
-        
+
         # Figure
         buf = BytesIO()
         fig = Figure(figsize=[9, 3])
-        
+
         # Phase
         phase, dphase = spec_.get_phase(t0, redshift), t0_err
         datetime = spec_.get_obsdate().datetime
-        
+
         # -> Adding phase on the LC plot
         axlc.axvline(datetime, ls="--", color="0.6", lw=1)
         # -> Plot the spectrum
@@ -782,14 +873,15 @@ def target_page(name, warn_typing=True, warn_report=True):
         warnings.warn(f"Cannot build the LC for {name}")
         lcplot = None
 
-    # Delete the 
+    # Delete the
     del lightcurve
     del spectra
 
     #
+    print(typing_info)
     if target:
-        return render_template("target.html",
-                               target=target,
+        return render_template("target.html", status=status,
+                               target=target, data=target_data, typing=typing_info,
                                spectraplots=spectraplots,
                                lcplot=lcplot)
     else:
@@ -801,7 +893,8 @@ def target_page(name, warn_typing=True, warn_report=True):
 @login_required
 def target_random(skip_classified_more_than=2):
     """ """
-    targetname = get_not_classified(
-        as_basequery=True, skip_classified_more_than=skip_classified_more_than).order_by(func.random()).first().name
+    status, classifications = get_user_status()
+    targetname = get_my_targets_consider(as_list=False).order_by(func.random()).first().name
+    
     print(targetname)
-    return target_page(targetname)
+    return target_page(targetname, status=status)

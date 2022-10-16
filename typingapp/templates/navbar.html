@@ -19,18 +19,25 @@
                   <a class="nav-link active" aria-current="page" href="{{ url_for('login') }}">Login</a>
       	        </li>
       	      {% endif%}
+              
+              <li class="nav-item">
+                {% if current_user.config__reviewstatus == None or current_user.config__reviewstatus == 'typer' %}
+                      <a class="nav-link disabled" href="">Mode: Typer</a>
+                {% elif current_user.config__reviewstatus == 'reviewer' %}
+                      <a class="nav-link disabled" href="">Mode: Reviewer</a>
+                {% else %}
+                      <a class="nav-link disabled" href="">Mode: Arbiter</a>
+                {% endif %}
+              </li>
 
       	       <li class="nav-item">
                  <a class="nav-link" href="{{ url_for('dashboard')}}">Dashboard</a>
       	       </li>
-
-
-              <li class="nav-item">
-                  <a class="nav-link"href="{{ url_for('classifications')}}">Classifications</a>
+               <li class="nav-item">
+                  <a class="nav-link" href="{{ url_for('classifications')}}">Classifications</a>
       	       </li>
+
             </ul>
-
-
             <ul class="navbar-nav mx-auto">
                 <li class="nav-item ">
                     <a class="nav-link" href="{{ url_for('tutorials')}}">Tutorials</a>
