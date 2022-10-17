@@ -50,9 +50,9 @@ migrate = Migrate(app, db)
 # -------------- #
 
 
-DATA_TO_CONSIDER = typingapp_io.get_data(redshift_range=[0,0.06],
-                                         first_spec_phase=5,
-                                         ndetections=3)
+DATA_TO_CONSIDER = typingapp_io.get_data(ndetections = 3) #redshift_range = [0, 0.06], first_spec_phase = 5,
+
+
 TARGETS_TO_CONSIDER = list(DATA_TO_CONSIDER.index)
 LIST_OF_CLASSIFICATIONS = DATA_TO_CONSIDER["classification"].unique()
 NTARGETS = len(TARGETS_TO_CONSIDER)
@@ -400,8 +400,6 @@ def home():
                                            db.engine)
     current_report = current_report[current_report["target_name"].isin(my_targets_to_consider)]
 
-
-    print("status ", status)
     if status in ["reviewer","arbiter"]:
 
         data = current_report[current_report["value"].str.startswith("arbiter:")]
@@ -410,7 +408,6 @@ def home():
         target_classifications = classifications.groupby("target_name").size()
         progress = np.sum( target_classifications >= 2)/ntargets * 100
         
-    print(progress)
     
     
     # What People did:
@@ -786,7 +783,7 @@ def targetid_page(id):
 
 @app.route("/target/<name>")
 @login_required
-def target_page(name, warn_typing=True, warn_report=True, status=None):
+def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, status=None):
     """ """
     ZQUALITY_LABEL = {2: " z source: host",
                       1: " z source: sn",
@@ -810,6 +807,10 @@ def target_page(name, warn_typing=True, warn_report=True, status=None):
 
     # Parsing inputs
     # annoying the False/True are strings...
+    t_reports = Classifications.query.filter_by(kind="report",
+                                                    target_name=targetname, user_id=current_user.id).all()
+
+    
     if eval(args.get("warn_typing", default=str(warn_typing), type=str)):
         t_typings = Classifications.query.filter_by(kind="typing",
                                                     target_name=targetname, user_id=current_user.id).all()
@@ -818,11 +819,9 @@ def target_page(name, warn_typing=True, warn_report=True, status=None):
                 f"You already classify this target ({target.name}) as {t_typing.value}", category="warning")
 
     if eval(args.get("warn_report", default=str(warn_report), type=str)):
-        t_reports = Classifications.query.filter_by(kind="report",
-                                                    target_name=targetname, user_id=current_user.id).all()
         for t_report in t_reports:
-            flash(
-                f"You already reported {t_report.value} this target ({target.name})", category="info")
+            flash(f"You already reported {t_report.value} this target ({target.name})",
+                  category="info")
 
     # ---------- #
     #    Data    #
@@ -831,6 +830,15 @@ def target_page(name, warn_typing=True, warn_report=True, status=None):
     spectra = typingapp_io.get_target_spectra(name)
     t0, t0_err, redshift, zlabel = target_data[["t0","t0_err", "redshift", "source"]].values
 
+    # - remove already 'rm' spectra by someone
+    if eval(args.get("rm_badspec", default=str(rm_badspec), type=str)):
+        reported = Classifications.query.filter_by(kind="report", target_name=targetname).all()
+
+        spectrum_to_rm = [report.value.split(":")[-1] for report in reported if report.value.startswith("spec:rm")]
+        print(f"--> spectrum_to_rm {spectrum_to_rm}")
+    else:
+        spectrum_to_rm = []
+        
     # ------------ #
     # - LC Plot    #
     # ------------ #
@@ -838,10 +846,16 @@ def target_page(name, warn_typing=True, warn_report=True, status=None):
     axlc = Figure(figsize=[7, 2]).add_axes([0.08, 0.25, 0.87, 0.7])
 
     # - Spectra Plots
-    spectraplots = []
+    spectraplots = {}
     for spec_ in spectra:
+        basename = os.path.basename(spec_.filename).lower()
+        if basename in spectrum_to_rm:
+            print(f"{basename} should be removed. So not shown.")
+            continue
+        
         print (spec_)
         if spec_ is None or spec_.snidresult is None:
+            print(f"{basename} is None or snidresutl is None. So not shown")
             continue
 
         # Figure
@@ -858,7 +872,8 @@ def target_page(name, warn_typing=True, warn_report=True, status=None):
         _ = spec_.snidresult.show(fig=fig, label=spec_.filename.split("/")[-1],
                                   phase=phase, dphase=dphase, redshift=redshift, zlabel=zlabel
                                   ).savefig(buf, format="png", dpi=250)
-        spectraplots.append(base64.b64encode(buf.getbuffer()).decode("ascii"))
+        
+        spectraplots[basename] = base64.b64encode(buf.getbuffer()).decode("ascii")
 
     # - Storing the LC plot    #
     try:

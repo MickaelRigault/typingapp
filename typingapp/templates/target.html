@@ -70,28 +70,36 @@
 
 	<div class="col-auto me-auto">
 	  <h4 style="color:#CCD1D1;">
-	  {% if target.x1 < -4 %}
-	    stretch: very fast (<-4)
-	  {% elif target.x1 > 4 %}
-	    stretch: very slow (>+4)
-	  {% else %}
-	    stretch: normal
-	  {% endif %}
+    {% if target.x1 == None %}
+      stretch: NaN
+    {% else %}
+	    {% if target.x1 < -4 %}
+	       stretch: very fast (<-4)
+	    {% elif target.x1 > 4 %}
+	         stretch: very slow (>+4)
+	    {% else %}
+	         stretch: normal
+	     {% endif %}
+    {% endif %}
 	  </h4>
 	</div>
 
 
 	<div class="col-auto me-auto">
 	  <h4 style="color:#CCD1D1;">
-	  {% if target.c < -0.3 %}
-	    color: very blue (<-0.3)
-	  {% elif target.c > 0.8 %}
-	     color: very red (>0.8)
-	  {% elif target.c > 0.3 %}
-	    color: red (0.3< c < 0.8)
-	  {% else %}
-	    color: normal
-	  {% endif %}
+      {% if target.c == None %}
+          color: NaN
+      {% else %}
+      	  {% if target.c < -0.3 %}
+      	    color: very blue (<-0.3)
+      	  {% elif target.c > 0.8 %}
+      	     color: very red (>0.8)
+      	  {% elif target.c > 0.3 %}
+      	    color: red (0.3< c < 0.8)
+      	  {% else %}
+      	    color: normal
+      	  {% endif %}
+      {% endif %}
 	  </h4>
 	</div>
 
@@ -120,7 +128,7 @@
 <div class="container-fluid">
   <!--- Loop over the spectra --->
   <form method="post" action="/classify/{{ target.id }}" >
-    {% for specplot in spectraplots %}
+    {% for basename, specplot in spectraplots.items() %}
     <div class="row">
       <img src='data:image/png;base64,{{ specplot }}'/>
     </div>
@@ -135,6 +143,7 @@
           <input type="submit" value=" data " name="report:spec:data:{{loop.revindex0}}" class="btn btn-outline-secondary btn-sm">
           <input type="submit" value=" snid " name="report:spec:snid:{{loop.revindex0}}" class="btn btn-outline-secondary btn-sm">
           <input type="submit" value=" line " name="report:spec:emissionline:{{loop.revindex0}}" class="btn btn-outline-secondary btn-sm">
+          <input type="submit" value=" discard " name="report:spec:rm:{{ basename }}" class="btn btn-outline-danger btn-sm">
         </div>
       </div>
     </div>
