@@ -241,9 +241,11 @@ def get_user_status():
     if me_user.config__reviewstatus == None or me_user.config__reviewstatus == 'typer':
         status = 'typer'
         classifications = ["None"]
+        
     elif me_user.config__reviewstatus == 'reviewer':
         status = 'reviewer'
-        classifications = [k for k in LIST_OF_CLASSIFICATIONS if k not in ["None","confusing"]]
+        classifications = ['ia']
+    
     else: # arbiter
         status = 'arbiter'
         classifications = ["confusing"]
