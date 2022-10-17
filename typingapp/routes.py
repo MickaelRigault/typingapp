@@ -49,8 +49,8 @@ migrate = Migrate(app, db)
 # DATA           #
 # -------------- #
 
-
-DATA_TO_CONSIDER = typingapp_io.get_data(ndetections = 3, first_spec_phase = 20) #
+TYPINGAPP_DATA_PROP = dict(ndetections = 3, first_spec_phase = 20)
+DATA_TO_CONSIDER = typingapp_io.get_data(**TYPINGAPP_DATA_PROP) #
 
 
 TARGETS_TO_CONSIDER = list(DATA_TO_CONSIDER.index)
@@ -486,7 +486,7 @@ def logout():
 @login_required
 def dashboard():
     """ """
-    return render_template("dashboard.html")
+    return render_template("dashboard.html", appdata_prop=TYPINGAPP_DATA_PROP)
 
 # -------- #
 #  USER    #
