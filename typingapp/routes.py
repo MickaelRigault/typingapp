@@ -799,7 +799,7 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     # DB
     targetname = escape(name)
     target = Targets.query.filter_by(name=targetname).first()
-    target_data = DATA_TO_CONSIDER.loc[target.name]
+
     target_typing = typingapp_io.TYPINGS.loc[target.name]
     typing_info = dict( zip(target_typing["typing"],target_typing["ntypings"]) )
     del target_typing
@@ -830,6 +830,7 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     # ---------- #
     lightcurve = typingapp_io.get_target_lightcurve(name)
     spectra = typingapp_io.get_target_spectra(name)
+    target_data = typingapp_io.get_target_data(target.name)
     t0, t0_err, redshift, zlabel = target_data[["t0","t0_err", "redshift", "source"]].values
 
     # - remove already 'rm' spectra by someone
@@ -851,7 +852,7 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     spectraplots = {}
     for spec_ in spectra:
         if spec_ is None or spec_.snidresult is None:
-            print(f"{basename} is None or snidresutl is None. So not shown")
+            print(f"{spec_} is None or snidresutl is None. So not shown")
             continue
 
         basename = os.path.basename(spec_.filename).lower()
