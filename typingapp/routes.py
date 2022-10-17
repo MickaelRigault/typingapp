@@ -908,7 +908,10 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
 def target_random(skip_classified_more_than=2):
     """ """
     status, classifications = get_user_status()
-    targetname = get_my_targets_consider(as_list=False).order_by(func.random()).first().name
+    targets = get_my_targets_consider(as_list=False)
+    already_classified = get_classified(incl_unclear=True, by_current_user=True)
+    targets = targets.filter(Targets.name.notin_( already_classified ))
     
+    targetname = targets.order_by(func.random()).first().name
     print(targetname)
     return target_page(targetname, status=status)
