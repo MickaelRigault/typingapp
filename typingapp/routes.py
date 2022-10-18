@@ -713,12 +713,13 @@ def classify(id, flash_classified=False):
 
             db.session.add(classification)
             db.session.commit()
+            
             return redirect(url_for("target_random"))
         
         elif "report:" in input_keys:  # report
             kind = "report"
             value = input_keys.replace(f"{kind}:", "")
-
+            
             classification = Classifications(user_id=current_user.id,
                                              target_id=id,
                                              target_name=target.name,
@@ -728,11 +729,23 @@ def classify(id, flash_classified=False):
 
             db.session.add(classification)
             db.session.commit()
-            if value.startswith("review") or value.startswith("arbiter"): # good to go
-                return redirect(url_for("target_random"))
 
+            go_to_random = False
+            # move to random cases:
+            random_cases = ["review", "arbiter"]
+            if current_user.config__reviewstatus == "specter":
+                if value == "spec:rm:none_left": # good to go
+                    go_to_random = True
+
+            elif np.any([value.startswith(k_) for k_ in random_cases]): # good to go
+                go_to_random = True
+
+            if go_to_random:
+                return redirect(url_for("target_random"))
+            
             flash(f"You reported {value} for {target.name}",
                   category="warning")
+            
             return redirect(url_for(f"target_page", name=target.name,
                                     warn_report=False))
             
@@ -920,6 +933,8 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
 
     #
     print(typing_info)
+    print(f"status: {status}")
+    
     if target:
         return render_template("target.html", status=status,
                                target=target, data=target_data, typing=typing_info,
