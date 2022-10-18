@@ -278,7 +278,7 @@ def get_user_status():
 
     
 def get_classified(incl_unclear=False, type_isin=None,
-                   by_current_user=True):
+                   by_current_user=True, incl_arbiter=True):
     """
     Parameters
     ----------
@@ -287,23 +287,22 @@ def get_classified(incl_unclear=False, type_isin=None,
     -------
     list of target name
     """
-    typed_names = Classifications.query.filter_by(kind="typing")
-    if by_current_user:
-        typed_names = typed_names.filter_by(user_id=current_user.id)
-
-    if typed_names.count() == 0:
-        return []
-
+    query = "SELECT * FROM Classifications"
+    # add typing
+    if incl_arbiter:
+        query += " WHERE ((kind='typing') OR (kind='report' and value like 'arbiter%'))"
+    else:
+        query += " WHERE (kind='typing')"
+        
     if not incl_unclear:
-        typed_names = typed_names.filter(
-            Classifications.value.isnot("unclear"))
+        query += " AND value != 'unclear'"
+    
+    if by_current_user:
+        query += f" AND user_id = {current_user.id}"
 
-    if type_isin is not None:
-        typed_names = typed_names.filter(
-            Classifications.value.in_(list(np.atleast_1d(type_isin))))
-
-    return np.concatenate(typed_names.with_entities(Classifications.target_name
-                                                        ).distinct().all())
+    print(query)
+    typed_names = pandas.read_sql_query(query, db.engine)["target_name"].unique()
+    return typed_names
 
 
 def get_not_classified(incl_unclear=False, type_isin=None, as_basequery=False,
@@ -956,5 +955,4 @@ def target_random(skip_classified_more_than=2):
         targets = targets.filter(Targets.name.notin_( already_classified ))
     
     targetname = targets.order_by(func.random()).first().name
-    print(targetname)
     return target_page(targetname, status=status)
