@@ -188,7 +188,8 @@ def load_user(user_id):
 #    TOOLS         #
 #                  #
 # ================ #    
-def get_targets(to_consider=True, classifications=None, as_list=False):
+def get_targets(to_consider=True, classifications=None, as_list=False,
+                report_contains=None):
     """ get the targets (names or db entry) you should be looking at.
     
     Parameters
@@ -211,25 +212,32 @@ def get_targets(to_consider=True, classifications=None, as_list=False):
     if classifications is not None:
         to_consider = True
         classifications = np.atleast_1d(classifications)
-        targets_to_to_consider = list(DATA_TO_CONSIDER[DATA_TO_CONSIDER["classification"].isin(classifications)].index)
+        targets_to_consider = list(DATA_TO_CONSIDER[DATA_TO_CONSIDER["classification"].isin(classifications)].index)
     else:
-        targets_to_to_consider= TARGETS_TO_CONSIDER
-    
+        targets_to_consider= TARGETS_TO_CONSIDER
+
+    if report_contains is not None:
+        current_report = pandas.read_sql_query(f"SELECT * FROM Classifications WHERE kind='report'",
+                                               db.engine)
+        contains = "|".join( np.atleast_1d(report_contains) )
+        limited_to = current_report[ current_report["target_name"].isin(targets_to_consider) &
+                                     current_report.value.str.contains(contains) ]
+        targets_to_consider = limited_to["target_name"].unique()
+        
     if as_list:
-        return targets_to_to_consider
+        return targets_to_consider
     
     if to_consider:
-        targets = targets.filter( Targets.name.in_(targets_to_to_consider) )
+        targets = targets.filter( Targets.name.in_(targets_to_consider) )
 
     return targets
-
 
 @app.route("/user/targets")
 @login_required
 def get_my_targets_consider(as_list=False):
     """ returns the list of targets to consider. """
-    status, classifications = get_user_status()
-    targets = get_targets(classifications=classifications, as_list=as_list)
+    status, tprop = get_user_status()
+    targets = get_targets(as_list=as_list, **tprop)
     return targets
 
 @app.route("/user/status")
@@ -240,17 +248,21 @@ def get_user_status():
     
     if me_user.config__reviewstatus == None or me_user.config__reviewstatus == 'typer':
         status = 'typer'
-        classifications = ["None"]
+        tprop = dict(classifications="None")
         
     elif me_user.config__reviewstatus == 'reviewer':
         status = 'reviewer'
-        classifications = ['ia']
+        tprop = dict(classifications="ia")
     
-    else: # arbiter
+    elif me_user.config__reviewstatus == 'arbiter':
         status = 'arbiter'
-        classifications = ["confusing"]
+        tprop = dict(classifications="confusing")
         
-    return status, classifications
+    else: # specter
+        status = 'specter'
+        tprop = dict(classifications = None, report_contains="spec:data")
+        
+    return status, tprop
 
     
 def get_classified(incl_unclear=False, type_isin=None,
@@ -910,7 +922,7 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
 @login_required
 def target_random(skip_classified_more_than=2):
     """ """
-    status, classifications = get_user_status()
+    status, _ = get_user_status()
     targets = get_my_targets_consider(as_list=False)
     already_classified = get_classified(incl_unclear=True, by_current_user=True)
     targets = targets.filter(Targets.name.notin_( already_classified ))

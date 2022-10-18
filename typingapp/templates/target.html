@@ -42,7 +42,6 @@
         </div>
     </div>
 
-
     <div class="row">
         <div class="col-auto">
           {% if target.auto_subtype_prob == None %}
@@ -110,7 +109,7 @@
 <!--- This is a comment --->
 <br/>
 <!--- This is a comment --->
-{% if status == 'typer' %}
+{% if status == 'typer' or status == 'specter' %}
   {% include 'typing_buttons.html' %}
 {% elif status == 'reviewer' %}
   {% include 'review_buttons.html' %}
