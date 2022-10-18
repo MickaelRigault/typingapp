@@ -189,7 +189,7 @@ def load_user(user_id):
 #                  #
 # ================ #    
 def get_targets(to_consider=True, classifications=None, as_list=False,
-                report_contains=None):
+                report_contains=None, report_notcontains=None):
     """ get the targets (names or db entry) you should be looking at.
     
     Parameters
@@ -216,14 +216,24 @@ def get_targets(to_consider=True, classifications=None, as_list=False,
     else:
         targets_to_consider= TARGETS_TO_CONSIDER
 
-    if report_contains is not None:
+    if report_contains is not None or report_notcontains is not None:
         current_report = pandas.read_sql_query(f"SELECT * FROM Classifications WHERE kind='report'",
-                                               db.engine)
-        contains = "|".join( np.atleast_1d(report_contains) )
-        limited_to = current_report[ current_report["target_name"].isin(targets_to_consider) &
+                                               db.engine)        
+        if report_contains is not None:
+            contains = "|".join( np.atleast_1d(report_contains) )
+            limited_to = current_report[ current_report["target_name"].isin(targets_to_consider) &
                                      current_report.value.str.contains(contains) ]
-        targets_to_consider = limited_to["target_name"].unique()
-        
+            targets_to_consider = limited_to["target_name"].unique()
+
+        if report_notcontains is not None:
+            print(f"{len(targets_to_consider)} to start")
+
+            
+            notcontains = "|".join( np.atleast_1d(report_notcontains) )
+            discard = current_report[current_report["target_name"].isin(targets_to_consider) & 
+                           current_report["value"].str.contains(notcontains)]["target_name"].unique()
+            targets_to_consider = targets_to_consider[~np.in1d(targets_to_consider, discard)]
+            print(f"{len(targets_to_consider)} at the end")
     if as_list:
         return targets_to_consider
     
@@ -260,7 +270,9 @@ def get_user_status():
         
     else: # specter
         status = 'specter'
-        tprop = dict(classifications = None, report_contains="spec:data")
+        tprop = dict(classifications = None,
+                         report_contains="spec:data",
+                         report_notcontains="spec:rm")
         
     return status, tprop
 
@@ -399,7 +411,7 @@ def home():
     status, _ = get_user_status()
     my_targets_to_consider = get_my_targets_consider(as_list=True)
     ntargets = len(my_targets_to_consider)
-
+    print(ntargets)
 
     # my classifications to do
     current_classifications = pandas.read_sql_query("SELECT * FROM Classifications WHERE kind='typing'",
@@ -924,8 +936,9 @@ def target_random(skip_classified_more_than=2):
     """ """
     status, _ = get_user_status()
     targets = get_my_targets_consider(as_list=False)
-    already_classified = get_classified(incl_unclear=True, by_current_user=True)
-    targets = targets.filter(Targets.name.notin_( already_classified ))
+    if status not in ["specter"]:
+        already_classified = get_classified(incl_unclear=True, by_current_user=True)
+        targets = targets.filter(Targets.name.notin_( already_classified ))
     
     targetname = targets.order_by(func.random()).first().name
     print(targetname)

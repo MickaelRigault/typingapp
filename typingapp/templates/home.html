@@ -10,6 +10,8 @@
       {{ "{:,d}".format(ntargets) }} classifications to do
     {% elif status == 'reviewer' %}
       {{ "{:,d}".format(ntargets) }} classifications to review
+    {% elif status == 'specter' %}
+      Spectra for {{ "{:,d}".format(ntargets) }} targets to look at.
     {% else %}
       {{ "{:,d}".format(ntargets) }} classifications to arbiter
     {% endif %}
