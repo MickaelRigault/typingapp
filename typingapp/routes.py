@@ -872,8 +872,12 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     # - remove already 'rm' spectra by someone
     if eval(args.get("rm_badspec", default=str(rm_badspec), type=str)):
         reported = Classifications.query.filter_by(kind="report", target_name=targetname).all()
-
         spectrum_to_rm = [report.value.split(":")[-1] for report in reported if report.value.startswith("spec:rm")]
+        all_spectra_url = url_for("target_page", name=name, rm_badspec=False)
+        print(all_spectra_url)
+        flash(f'This object has {len(spectrum_to_rm)} spectra that have been removed ; check typingapp.in2p3.fr/target/{name}?rm_badspec=False',
+                  category="warning")
+        
         print(f"--> spectrum_to_rm {spectrum_to_rm}")
     else:
         spectrum_to_rm = []
@@ -936,7 +940,8 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     
     if target:
         return render_template("target.html", status=status,
-                               target=target, data=target_data, typing=typing_info,
+                               target=target, data=target_data,
+                               typing=typing_info,
                                spectraplots=spectraplots,
                                lcplot=lcplot)
     else:
