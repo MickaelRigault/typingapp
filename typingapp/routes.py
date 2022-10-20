@@ -875,7 +875,8 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
         spectrum_to_rm = [report.value.split(":")[-1] for report in reported if report.value.startswith("spec:rm")]
         all_spectra_url = url_for("target_page", name=name, rm_badspec=False)
         print(all_spectra_url)
-        flash(f'This object has {len(spectrum_to_rm)} spectra that have been removed ; check typingapp.in2p3.fr/target/{name}?rm_badspec=False',
+        if len(spectrum_to_rm)>0:
+            flash(f'This object has {len(spectrum_to_rm)} spectra that have been removed ; check typingapp.in2p3.fr/target/{name}?rm_badspec=False',
                   category="warning")
         
         print(f"--> spectrum_to_rm {spectrum_to_rm}")
