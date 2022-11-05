@@ -13,27 +13,16 @@
 
           {% if data.classification not in ('None', 'confusing', 'nan') %}
             <h1> {{ target.name }} is classified as a '{{ data.classification }}' </h1>
-            <h3> currently |
-              {% for key, value in typing.items() %}
-                 {{ value }}:{{ key }}
-              {% endfor %}
-            </h3>
           {% elif  data.classification == 'confusing' %}
             <h1> {{ target.name }} is confusing </h1>
-            <h3> details |
-              {% for key, value in typing.items() %}
-                 {{ value }}:{{ key }}
-              {% endfor %}
-             </h3>
           {% else %}
-            <h1> {{ target.name }} need additional inputs </h1>
-            <h3> details |
-              {% for key, value in typing.items() %}
-                 {{ value }}:{{ key }}
-              {% endfor %}
-             </h3>
+            <h1> {{ target.name }} needs additional inputs </h1>
           {% endif %}
-
+          <h3> details |
+            {% for key, value in typing.items() %}
+               {{ value }}:{{ key }}
+            {% endfor %}
+           </h3>
         </div>
 
         <div class="col-auto my-2">
