@@ -55,7 +55,7 @@ def get_input_targetdata():
 
     sndata = data[["ra","dec",
                   "redshift","redshift_err",
-                  "redshift_source",
+                  "source",
                   "x1","x1_err",
                   "c","c_err",
                   "fitprob", "iau_name"
@@ -73,7 +73,8 @@ def get_input_targetdata():
                              "subtype": "auto_subtype",
                              "p(type)": "auto_type_prob", 
                              "p(subtype|type)": "auto_subtype_prob",
-                             "iau_name":"name_iau"
+                             "iau_name":"name_iau",
+                             "source": "redshift_source", # keep older format
                             }, axis=1)
 
 def build_targets_db():
