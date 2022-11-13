@@ -262,7 +262,7 @@ def get_user_status():
         
     elif me_user.config__reviewstatus == 'reviewer':
         status = 'reviewer'
-        tprop = dict(classifications="ia")
+        tprop = dict(classifications="ia(-?)")
     
     elif me_user.config__reviewstatus == 'arbiter':
         status = 'arbiter'
