@@ -266,7 +266,7 @@ def get_user_status():
     
     elif me_user.config__reviewstatus == 'arbiter':
         status = 'arbiter'
-        tprop = dict(classifications="confusing")
+        tprop = dict(classifications="None")
         
     else: # specter
         status = 'specter'
