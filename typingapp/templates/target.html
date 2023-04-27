@@ -58,7 +58,7 @@
         </div>
         <div class="col-auto me-auto">
             <h4 style="color:#CCD1D1;">
-              redshift: {{ "{:,.4f}".format(target.redshift) }} ({{ target.redshift_source }})
+              redshift: {{ "{:,.4f}".format(data.redshift)}} ± {{"{:,.4f}".format(data.redshift_err) }} ({{ data.source }})
             </h4>
         </div>
 

@@ -823,15 +823,11 @@ def targetid_page(id):
 @login_required
 def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, status=None):
     """ """
-    ZQUALITY_LABEL = {2: " z source: host",
-                      1: " z source: sn",
-                      0: " z source: unknown",
-                      None: " z source: not given"}
-
     from matplotlib.figure import Figure
 
     if status is None:
         status, _ = get_user_status()
+        
     # DB
     targetname = escape(name)
     target = Targets.query.filter_by(name=targetname).first()
@@ -867,7 +863,7 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     lightcurve = typingapp_io.get_target_lightcurve(name)
     spectra = typingapp_io.get_target_spectra(name)
     target_data = typingapp_io.get_target_data(target.name)
-    t0, t0_err, redshift, zlabel = target_data[["t0","t0_err", "redshift", "source"]].values
+    t0, t0_err, redshift, redshift_err, zsource = target_data[["t0","t0_err", "redshift","redshift_err", "source"]].values
 
     # - remove already 'rm' spectra by someone
     if eval(args.get("rm_badspec", default=str(rm_badspec), type=str)):
@@ -913,7 +909,7 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
         axlc.axvline(datetime, ls="--", color="0.6", lw=1)
         # -> Plot the spectrum
         _ = spec_.snidresult.show(fig=fig, label=spec_.filename.split("/")[-1],
-                                  phase=phase, dphase=dphase, redshift=redshift, zlabel=zlabel
+                                  phase=phase, dphase=dphase, redshift=redshift, zlabel=zsource
                                   ).savefig(buf, format="png", dpi=250)
         
         spectraplots[basename] = base64.b64encode(buf.getbuffer()).decode("ascii")
