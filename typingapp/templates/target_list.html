@@ -7,31 +7,33 @@
 <table class="table table-hover">
     <thead>
         <tr>
-            <th scope="col">#</th>
             <th scope="col">name</th>
             <th scope="col">ra</th>
             <th scope="col">dec</th>
-            <th scope="col">redshift</th>
-            <th scope="col">z_quality</th>
-            <th scope="col">autotype</th>
-            <th scope="col">subtype</th>
+	    <th scope="col">redshift</th>
+            <th scope="col">redshift_err</th>	    
+	    <th scope="col">z_source</th>
+            <th scope="col">classification</th>	    
         </tr>
     </thead>
     <tbody>
-        {% for target in targets %}
+        {% for name, target in targets.iterrows() %}
             <tr>
-                <th scope="row">{{ target.id}}</th>
-                <td><a href="{{ url_for('target_page', name=target.name)}}" > {{ target.name }} </a></td>
+                <td><a href="{{ url_for('target_page', name=name)}}" > {{ name }} </a></td>
                 <td>{{ target.ra }}</td>
                 <td>{{ target.dec }}</td>
                 {% if target.redshift == None %}
                     <td> None </td>
                 {% else %}
                     <td>{{ "{:,.5f}".format(target.redshift) }}</td>
-                {% endif %}
-                <td>{{ target.z_quality }}</td>
-                <td>{{ target.auto_type }}</td>
-                <td>{{ target.auto_subtype }}</td>
+		{% endif %}
+		{% if target.redshift_err == None %}
+                    <td> None </td>
+                {% else %}
+                    <td>{{ "{:,.5f}".format(target.redshift_err) }}</td>
+		{% endif %}    
+		<td>{{ target.source }}</td>
+                <td>{{ target.classification }}</td>		    
             </tr>
         {% endfor %}
     </tbody>

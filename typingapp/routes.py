@@ -796,8 +796,8 @@ def search():
 @login_required
 def target_list():
     """ """
-    targets = get_targets(to_consider=True).order_by(Targets.id)
-    return render_template("target_list.html", targets=targets)
+#    targets = get_targets(to_consider=True).order_by(Targets.id)
+    return render_template("target_list.html", targets=DATA_TO_CONSIDER)
 
 
 @app.route("/target/list/favorite")
@@ -805,9 +805,7 @@ def target_list():
 def my_target_list():
     """ """
     list_of_names = get_mytargets(current_user.id).target_name.astype("string").values
-    targets = get_targets(to_consider=False).filter( Targets.name.in_(list_of_names)
-                                                    ).order_by(Targets.id)
-
+    targets = DATA_TO_CONSIDER[DATA_TO_CONSIDER.index.isin(list_of_names)]
     return render_template("target_list.html", targets=targets)
 
 
