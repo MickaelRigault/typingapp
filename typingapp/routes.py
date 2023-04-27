@@ -832,9 +832,13 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     targetname = escape(name)
     target = Targets.query.filter_by(name=targetname).first()
 
-    target_typing = typingapp_io.TYPINGS.loc[target.name]
-    typing_info = dict( zip(target_typing["typing"],target_typing["ntypings"]) )
-    del target_typing
+    if target.name in typingapp_io.TYPINGS.index:
+        target_typing = typingapp_io.TYPINGS.loc[target.name]
+        typing_info = dict( zip(target_typing["typing"],target_typing["ntypings"]) )
+        del target_typing
+    else:
+        typing_info = {"no-typing-info": None}
+        
     # = Requesting page = #
     # input arguments
     args = request.args
