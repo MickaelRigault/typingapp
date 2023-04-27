@@ -104,13 +104,9 @@
 <!--- This is a comment --->
 <br/>
 <!--- This is a comment --->
-{% if status == 'typer' %}
-  {% include 'typing_buttons.html' %}
-{% elif status == 'reviewer' %}
+{% if status == 'reviewer' %}
   {% include 'review_buttons.html' %}
-{% elif status == 'specter' %}
-  {% include 'specter_buttons.html' %}
-{% else %}
+{% elif status == 'arbiter' %}
   {% include 'arbiter_buttons.html' %}
 {% endif %}
 

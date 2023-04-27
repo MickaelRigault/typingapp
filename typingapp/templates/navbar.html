@@ -22,7 +22,7 @@
 
               <li class="nav-item">
                 {% if current_user.config__reviewstatus == None or current_user.config__reviewstatus == 'typer' %}
-                    <a class="nav-link disabled" href="">Mode: Typer</a>
+                    <a class="nav-link disabled" href="">Mode: Viewer </a>
                 {% elif current_user.config__reviewstatus == 'reviewer' %}
                     <a class="nav-link disabled" href="">Mode: Reviewer</a>
                 {% elif current_user.config__reviewstatus == 'arbiter' %}

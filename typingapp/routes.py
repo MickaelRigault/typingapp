@@ -267,12 +267,9 @@ def get_user_status():
     elif me_user.config__reviewstatus == 'arbiter':
         status = 'arbiter'
         tprop = dict(classifications="None")
-        
-    else: # specter
-        status = 'specter'
-        tprop = dict(classifications = None,
-                         report_contains="spec:data",
-                         report_notcontains="spec:rm")
+    else: # assume typer
+        status = 'typer'
+        tprop = dict(classifications="None")
         
     return status, tprop
 
@@ -796,7 +793,6 @@ def search():
 @login_required
 def target_list():
     """ """
-#    targets = get_targets(to_consider=True).order_by(Targets.id)
     return render_template("target_list.html", targets=DATA_TO_CONSIDER)
 
 
@@ -910,10 +906,13 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
         # -> Adding phase on the LC plot
         axlc.axvline(datetime, ls="--", color="0.6", lw=1)
         # -> Plot the spectrum
-        _ = spec_.snidresult.show(fig=fig, label=spec_.filename.split("/")[-1],
+        try:
+            _ = spec_.snidresult.show(fig=fig, label=spec_.filename.split("/")[-1],
                                   phase=phase, dphase=dphase, redshift=redshift, zlabel=zsource
                                   ).savefig(buf, format="png", dpi=250)
-        
+        except:
+            print("failed to use spec_.snidresult ")
+            
         spectraplots[basename] = base64.b64encode(buf.getbuffer()).decode("ascii")
 
     # - Storing the LC plot    #
@@ -933,10 +932,7 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     del lightcurve
     del spectra
 
-    #
-    print(typing_info)
-    print(f"status: {status}")
-    
+    #    
     if target:
         return render_template("target.html", status=status,
                                target=target, data=target_data,
@@ -951,12 +947,12 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
 @app.route("/target/random")
 @login_required
 def target_random(skip_classified_more_than=2):
-    """ """
+    """ """    
     status, _ = get_user_status()
     targets = get_my_targets_consider(as_list=False)
-    if status not in ["specter"]:
-        already_classified = get_classified(incl_unclear=True, by_current_user=True)
-        targets = targets.filter(Targets.name.notin_( already_classified ))
+
+    already_classified = get_classified(incl_unclear=True, by_current_user=True)
+    targets = targets.filter(Targets.name.notin_( already_classified ))
     
     targetname = targets.order_by(func.random()).first().name
     return target_page(targetname, status=status)
