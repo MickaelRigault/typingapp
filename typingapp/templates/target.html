@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ target.name }}{% endblock %}
+{% block title %}{{ data.name }}{% endblock %}
 
 
 {% block content %}
@@ -12,11 +12,11 @@
         <div class="col-auto me-auto">
 
           {% if data.classification not in ('None', 'confusing', 'nan') %}
-            <h1> {{ target.name }} is classified as a '{{ data.classification }}' </h1>
+            <h1> {{ data.name }} is classified as a '{{ data.classification }}' </h1>
           {% elif  data.classification == 'confusing' %}
-            <h1> {{ target.name }} is confusing </h1>
+            <h1> {{ data.name }} is confusing </h1>
           {% else %}
-            <h1> {{ target.name }} needs additional inputs </h1>
+            <h1> {{ data.name }} needs additional inputs </h1>
           {% endif %}
           <h3> details |
             {% for key, value in typing.items() %}
@@ -26,36 +26,18 @@
         </div>
 
         <div class="col-auto my-2">
-          <a class="btn btn-outline-secondary" href="http://skipper.caltech.edu:8080/cgi-bin/growth/view_source.cgi?name={{ target.name }}" target="_blank">
+          <a class="btn btn-outline-secondary" href="http://skipper.caltech.edu:8080/cgi-bin/growth/view_source.cgi?name={{ data.name }}" target="_blank">
              See on Growth
           </a>
         </div>
         <div class="col-auto my-2">
-          <a class="btn btn-outline-primary" href="https://fritz.science/source/{{ target.name }}" target="_blank">
+          <a class="btn btn-outline-primary" href="https://fritz.science/source/{{ data.name }}" target="_blank">
              See on Fritz
           </a>
         </div>
     </div>
 
     <div class="row">
-        <div class="col-auto">
-          {% if target.auto_subtype_prob == None %}
-              {% if target.auto_type_prob == None %}
-                  <h4 style="color:#CCD1D1;">
-                    auto-typing: None
-                  </h4>
-              {% else %}
-                  <h4 style="color:#CCD1D1;">
-                    auto-typing: p({{ target.auto_type }})={{ "{:,.0%}".format(target.auto_type_prob ) }} ; no subtyping.
-                  </h4>
-              {% endif %}
-          {% else %}
-            <h4 style="color:#CCD1D1;">
-              auto-typing: p({{ target.auto_type }})={{ "{:,.0%}".format(target.auto_type_prob ) }}
-             ; p({{ target.auto_subtype }}|{{ target.auto_type }})={{ "{:,.0%}".format(target.auto_subtype_prob ) }}
-            </h4>
-          {% endif %}
-        </div>
         <div class="col-auto me-auto">
             <h4 style="color:#CCD1D1;">
               redshift: {{ "{:,.4f}".format(data.redshift)}} ± {{"{:,.4f}".format(data.redshift_err) }} ({{ data.source }})
@@ -64,12 +46,12 @@
 
 	<div class="col-auto me-auto">
 	  <h4 style="color:#CCD1D1;">
-    {% if target.x1 == None %}
+    {% if data.x1 == None %}
       stretch: NaN
     {% else %}
-	    {% if target.x1 < -4 %}
+	    {% if data.x1 < -4 %}
 	       stretch: very fast (<-4)
-	    {% elif target.x1 > 4 %}
+	    {% elif data.x1 > 4 %}
 	         stretch: very slow (>+4)
 	    {% else %}
 	         stretch: normal
@@ -81,14 +63,14 @@
 
 	<div class="col-auto me-auto">
 	  <h4 style="color:#CCD1D1;">
-      {% if target.c == None %}
+      {% if data.c == None %}
           color: NaN
       {% else %}
-      	  {% if target.c < -0.3 %}
+      	  {% if data.c < -0.3 %}
       	    color: very blue (<-0.3)
-      	  {% elif target.c > 0.8 %}
+      	  {% elif data.c > 0.8 %}
       	     color: very red (>0.8)
-      	  {% elif target.c > 0.3 %}
+      	  {% elif data.c > 0.3 %}
       	    color: red (0.3< c < 0.8)
       	  {% else %}
       	    color: normal

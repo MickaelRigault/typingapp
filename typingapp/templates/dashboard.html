@@ -55,7 +55,7 @@
           <th scope="row">Status</th>
           <td>
             <div class="btn-group mb-2">
-              {% if current_user.config__reviewstatus == None or current_user.config__reviewstatus == 'typer' %}
+              {% if current_user.config__reviewstatus == None or current_user.config__reviewstatus in 'typer' %}
                 <input type="submit" value=" typer " name="config__reviewstatus" class="btn btn-secondary btn-sm">
                 <input type="submit" value=" reviewer " name="config__reviewstatus" class="btn btn-outline-secondary btn-sm">
                 <input type="submit" value=" arbiter " name="config__reviewstatus" class="btn btn-outline-secondary btn-sm">

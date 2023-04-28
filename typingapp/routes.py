@@ -13,7 +13,7 @@ from datetime import datetime
 #     Flask        #
 #                  #
 # ================ #
-from flask import render_template, flash, redirect, url_for, request
+from flask import render_template, flash, redirect, url_for, request, send_file
 from flask_login import login_user, login_required, logout_user, current_user
 from markupsafe import escape
 
@@ -49,13 +49,17 @@ migrate = Migrate(app, db)
 # DATA           #
 # -------------- #
 
-TYPINGAPP_DATA_PROP = dict(ndetections = 3, first_spec_phase = 20)
+TYPINGAPP_DATA_PROP = dict(ndetections = None, first_spec_phase = None)
 DATA_TO_CONSIDER = typingapp_io.get_data(**TYPINGAPP_DATA_PROP) #
 
 
 TARGETS_TO_CONSIDER = list(DATA_TO_CONSIDER.index)
 LIST_OF_CLASSIFICATIONS = DATA_TO_CONSIDER["classification"].unique()
 NTARGETS = len(TARGETS_TO_CONSIDER)
+
+
+#FILENAMES = {"all":"all_targets.csv"}
+#DATA_TO_CONSIDER.to_csv(FILENAMES["all"])
 
 # ==================== #
 #                      #
@@ -262,11 +266,12 @@ def get_user_status():
         
     elif me_user.config__reviewstatus == 'reviewer':
         status = 'reviewer'
-        tprop = dict(classifications="ia(-?)")
+        tprop = dict(classifications=["None", "unclear"])
     
     elif me_user.config__reviewstatus == 'arbiter':
         status = 'arbiter'
-        tprop = dict(classifications="None")
+        tprop = dict(classifications=["None", "unclear"])
+        
     else: # assume typer
         status = 'typer'
         tprop = dict(classifications="None")
@@ -821,13 +826,14 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
 
     if status is None:
         status, _ = get_user_status()
+
+    if name not in DATA_TO_CONSIDER.index:
+        flash(f"No Target named {name}", category="warning")
+        return render_template("notarget.html", name=name)
         
     # DB
-    targetname = escape(name)
-    target = Targets.query.filter_by(name=targetname).first()
-
-    if target.name in typingapp_io.TYPINGS.index:
-        target_typing = typingapp_io.TYPINGS.loc[target.name]
+    if name in typingapp_io.TYPINGS.index:
+        target_typing = typingapp_io.TYPINGS.loc[name]
         typing_info = dict( zip(target_typing["typing"],target_typing["ntypings"]) )
         del target_typing
     else:
@@ -840,19 +846,19 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     # Parsing inputs
     # annoying the False/True are strings...
     t_reports = Classifications.query.filter_by(kind="report",
-                                                    target_name=targetname, user_id=current_user.id).all()
+                                                    target_name=name, user_id=current_user.id).all()
 
     
     if eval(args.get("warn_typing", default=str(warn_typing), type=str)):
         t_typings = Classifications.query.filter_by(kind="typing",
-                                                    target_name=targetname, user_id=current_user.id).all()
+                                                    target_name=name, user_id=current_user.id).all()
         for t_typing in t_typings:
             flash(
-                f"You already classify this target ({target.name}) as {t_typing.value}", category="warning")
+                f"You already classify this target ({name}) as {t_typing.value}", category="warning")
 
     if eval(args.get("warn_report", default=str(warn_report), type=str)):
         for t_report in t_reports:
-            flash(f"You already reported {t_report.value} this target ({target.name})",
+            flash(f"You already reported {t_report.value} this target ({name})",
                   category="info")
 
     # ---------- #
@@ -860,12 +866,12 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     # ---------- #
     lightcurve = typingapp_io.get_target_lightcurve(name)
     spectra = typingapp_io.get_target_spectra(name)
-    target_data = typingapp_io.get_target_data(target.name)
+    target_data = typingapp_io.get_target_data(name)
     t0, t0_err, redshift, redshift_err, zsource = target_data[["t0","t0_err", "redshift","redshift_err", "source"]].values
 
     # - remove already 'rm' spectra by someone
     if eval(args.get("rm_badspec", default=str(rm_badspec), type=str)):
-        reported = Classifications.query.filter_by(kind="report", target_name=targetname).all()
+        reported = Classifications.query.filter_by(kind="report", target_name=name).all()
         spectrum_to_rm = [report.value.split(":")[-1] for report in reported if report.value.startswith("spec:rm")]
         all_spectra_url = url_for("target_page", name=name, rm_badspec=False)
         print(all_spectra_url)
@@ -933,15 +939,14 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     del spectra
 
     #    
-    if target:
-        return render_template("target.html", status=status,
-                               target=target, data=target_data,
+    target = Targets.query.filter_by(name=name).first()
+    
+    return render_template("target.html", status=status,
+                               data=target_data, target=target,
                                typing=typing_info,
                                spectraplots=spectraplots,
                                lcplot=lcplot)
-    else:
-        flash(f"No Target named {target}", category="warning")
-        return render_template("notarget.html", name=targetname)
+        
 
 
 @app.route("/target/random")
@@ -956,3 +961,13 @@ def target_random(skip_classified_more_than=2):
     
     targetname = targets.order_by(func.random()).first().name
     return target_page(targetname, status=status)
+
+
+
+
+
+# ================ #
+#                  #
+#   Downloading    #
+#                  #
+# ================ #

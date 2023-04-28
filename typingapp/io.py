@@ -21,10 +21,10 @@ TYPINGS = io.get_target_typing()
 def get_data(redshift_range=None, exclude_targets=None,
                     first_spec_phase=None, **kwargs):
     """ get targets to consider for the application. """
-    data = SAMPLE.get_data(redshift_range=redshift_range,
-                               exclude_targets=exclude_targets,
-                               first_spec_phase=first_spec_phase,
-                               **kwargs)
+    data = SAMPLE.data#get_data(redshift_range=redshift_range,
+                      #         exclude_targets=exclude_targets,
+                      #         first_spec_phase=first_spec_phase,
+                      #         **kwargs)
     return data
 
 
