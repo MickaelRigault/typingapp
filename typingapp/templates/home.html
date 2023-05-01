@@ -2,63 +2,16 @@
 
 {% block content %}
 
-
-<br>
 <div class="container">
-  <div class="row justify-content-center fs-3 mb-2">
-    {% if status == 'typer' %}
-      {{ "{:,d}".format(ntargets) }} classifications to do
-    {% elif status == 'reviewer' %}
-      {{ "{:,d}".format(ntargets) }} classifications to review
-    {% elif status == 'specter' %}
-      Spectra for {{ "{:,d}".format(ntargets) }} targets to look at.
-    {% else %}
-      {{ "{:,d}".format(ntargets) }} classifications to arbiter
-    {% endif %}
-  </div>
+ <div class="row">
+<div class="col-sm-12 col-md-8 offset-md-2">
   
-</div>
 
-<div class="progress"  style="height: 20px;">
-
-  <div class="progress-bar bg-primary" role="progressbar"
-    style="width: {{ progress }}%;"
-    aria-valuenow="12"
-    aria-valuemin="0" aria-valuemax="100">
-    {{ "{:,.1f}".format(progress) }}%
-  </div>
+  <img src="data:image/png;base64,{{ figure }}" class="card-img-top"
 
 </div>
-
-<br>
-<br>
-<br>
-
-   {% if current_user.is_authenticated %}
-<div class="container mx-auto" style="width: 75%;">
-  <table class="table">
-    <thead>
-      <tr>
-        <th scope="col"> Name </th>
-        <th scope="col"> # Classifications </th>
-        <th scope="col"> # Reports </th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for id, user_class in dictclass.items() %}
-      <tr>
-        <th scope="row"> {{ user_class['name'] }} </th>
-        <td>{{ user_class['nclassifications'] }}</td>
-        <td>{{ user_class['nreports'] }}</td>
-      </tr>
-
-      {% endfor %}
-    </tbody>
-  </table>
 </div>
-{% else %}
-<div class="d-grid gap-2 col-4 mx-auto">
-  <a class="btn btn-outline-secondary btn-lg" aria-current="page" href="{{ url_for('login') }}">Login</a>
 </div>
-{% endif%}
+
+
 {% endblock %}

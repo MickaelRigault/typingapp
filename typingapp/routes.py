@@ -37,6 +37,8 @@ from . import io as typingapp_io
 from .forms import UserForm, LoginForm
 
 
+
+
 # -------------- #
 # LOCAL DATABASE #
 # -------------- #
@@ -57,6 +59,17 @@ TARGETS_TO_CONSIDER = list(DATA_TO_CONSIDER.index)
 LIST_OF_CLASSIFICATIONS = DATA_TO_CONSIDER["classification"].unique()
 NTARGETS = len(TARGETS_TO_CONSIDER)
 
+
+# =============== #
+#                 #
+#   PLOTTING      #
+#                 #
+# =============== #
+from matplotlib.figure import Figure
+bufHOME = BytesIO()
+FIG = Figure(figsize=[6, 4])
+_ = typingapp_io.get_hubble_figure(FIG).savefig(bufHOME, format="png", dpi=250)
+HOMEPLOT = base64.b64encode(bufHOME.getbuffer()).decode("ascii")
 
 #FILENAMES = {"all":"all_targets.csv"}
 #DATA_TO_CONSIDER.to_csv(FILENAMES["all"])
@@ -409,58 +422,8 @@ def merging_userdb(filepath_db):
 def home():
     """ """
     # my home
-    status, _ = get_user_status()
-    my_targets_to_consider = get_my_targets_consider(as_list=True)
-    ntargets = len(my_targets_to_consider)
-    print(ntargets)
 
-    # my classifications to do
-    current_classifications = pandas.read_sql_query("SELECT * FROM Classifications WHERE kind='typing'",
-                                                    db.engine)
-    current_classifications = current_classifications[current_classifications["target_name"].isin(my_targets_to_consider)]
-    # Remove the unclear
-    classifications = current_classifications[~(current_classifications["value"].astype(str) == "unclear")]
-
-    
-    # my reports
-    current_report = pandas.read_sql_query("SELECT * FROM Classifications WHERE kind='report'",
-                                           db.engine)
-    current_report = current_report[current_report["target_name"].isin(my_targets_to_consider)]
-
-    if status in ["reviewer","arbiter"]:
-
-        data = current_report[current_report["value"].str.startswith("arbiter:")]
-        progress = data["target_name"].nunique()  / ntargets * 100
-    else:
-        target_classifications = classifications.groupby("target_name").size()
-        progress = np.sum( target_classifications >= 2)/ntargets * 100
-        
-    
-    
-    # What People did:
-    #
-    nclassifications = pandas.DataFrame(classifications.groupby("user_id").size().sort_values(ascending=False),
-                                        columns=["nclassifications"])
-    users = pandas.read_sql_query("SELECT * FROM Users", db.engine).set_index("id")
-    nclassifications["name"] = users.loc[nclassifications.index]["name"]
-    
-    # Add reports
-    nclassifications = pandas.merge(nclassifications,
-                                    pandas.DataFrame(current_report.groupby(
-                                        "user_id").size(), columns=["nreports"]),
-                                    left_index=True, right_index=True)
-    # convert to dict for the website.
-    dictclass = nclassifications.T.to_dict()
-
-    # n-classifications
-
-    # per user classifications
-
-    return render_template("home.html", status=status,
-                           dictclass=dictclass,
-                           ntargets=ntargets,
-                           progress=float(progress),
-                           )
+    return render_template("home.html", figure=HOMEPLOT)
 
 
 @app.route("/tutorials")
@@ -822,7 +785,6 @@ def targetid_page(id):
 @login_required
 def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, status=None):
     """ """
-    from matplotlib.figure import Figure
 
     if status is None:
         status, _ = get_user_status()

@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 import ztfidr
-from ztfidr import io
+from ztfidr import io, plotting
 
 # DataBase
 DB_PATH = os.path.join(io.IDR_PATH, "typingapp.db")
@@ -18,6 +18,10 @@ TYPINGS = io.get_target_typing()
 #  Data For App   #
 #                 #
 # =============== #
+def get_hubble_figure(fig, clear_axes=True, **kwargs):
+    return plotting.show_hubble_standardisation(SAMPLE, fig=fig, clear_axes=clear_axes, **kwargs)
+    
+
 def get_data(redshift_range=None, exclude_targets=None,
                     first_spec_phase=None, **kwargs):
     """ get targets to consider for the application. """
