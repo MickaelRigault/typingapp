@@ -947,7 +947,7 @@ def download(which):
         which == "typing":
         filename = typingapp_io.PATH_CURRENT_TYPING
         mimetype='text/csv'
-    else
+    else:
         flash(f"Cannot download {which}", category="error")
         return redirect(url_for("home"))
         
