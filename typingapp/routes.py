@@ -53,10 +53,7 @@ migrate = Migrate(app, db)
 # DATA           #
 # -------------- #
 
-TYPINGAPP_DATA_PROP = dict(ndetections = None, first_spec_phase = None)
-DATA_TO_CONSIDER = typingapp_io.get_data(**TYPINGAPP_DATA_PROP) #
-
-
+DATA_TO_CONSIDER = typingapp_io.DATA
 TARGETS_TO_CONSIDER = list(DATA_TO_CONSIDER.index)
 LIST_OF_CLASSIFICATIONS = DATA_TO_CONSIDER["classification"].unique()
 NTARGETS = len(TARGETS_TO_CONSIDER)
@@ -76,8 +73,6 @@ _ = plotting.show_typingdistribution(typingapp_io.SAMPLE, fig=FIG)
 _ = FIG.savefig(bufHOME, format="png", dpi=250)
 HOMEPLOT = base64.b64encode(bufHOME.getbuffer()).decode("ascii")
 
-#FILENAMES = {"all":"all_targets.csv"}
-#DATA_TO_CONSIDER.to_csv(FILENAMES["all"])
 
 # ==================== #
 #                      #
@@ -297,8 +292,9 @@ def get_user_status():
     return status, tprop
 
     
-def get_classified(incl_unclear=False, type_isin=None,
-                   by_current_user=True, incl_arbiter=True):
+def get_classified(arbiter=True, typed=True,
+                   incl_unclear=False, type_isin=None,
+                   by_current_user=True):
     """
     Parameters
     ----------
@@ -308,11 +304,13 @@ def get_classified(incl_unclear=False, type_isin=None,
     list of target name
     """
     query = "SELECT * FROM Classifications"
-    # add typing
-    if incl_arbiter:
+
+    if typed and arbiter:
         query += " WHERE ((kind='typing') OR (kind='report' and value like 'arbiter%'))"
-    else:
+    elif typed:
         query += " WHERE (kind='typing')"
+    elif arbiter:
+        query += " WHERE (kind='report' and value like 'arbiter%')"
         
     if not incl_unclear:
         query += " AND value != 'unclear'"
@@ -427,15 +425,16 @@ def merging_userdb(filepath_db):
 def home():
     """ """
     # my home
-    status, tprop = get_user_status()
+    status, _ = get_user_status()
     if status in ["typer", "viewer"]:
         return render_template("home_stable.html", figure=HOMEPLOT)
 
+    target_names = DATA_TO_CONSIDER[DATA_TO_CONSIDER["classification"].isin(["None","unclear"])].index
+    # remove already arbitered
+    arbitered = get_classified(by_current_user=False, typed=False, arbiter=True) # arbitered only
+    target_names = target_names[~np.in1d(target_names, arbitered)]
     
-    targets = get_targets(as_list=False, **tprop)    
-    already_classified = get_classified(incl_unclear=True, by_current_user=True)
-    targets = targets.filter(Targets.name.notin_( already_classified ))
-
+    targets = Targets.query.filter(Targets.name.in_( target_names ))
     return render_template("home.html", targets=targets)
 
 
@@ -443,7 +442,6 @@ def home():
 def tutorials():
     """ """
     return render_template("tutorials.html")
-
 
 # ================ #
 #                  #

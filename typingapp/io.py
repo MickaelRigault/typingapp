@@ -11,6 +11,7 @@ DB_PATH = os.path.join(io.IDR_PATH, "typingapp.db")
 # DataSource
 SAMPLE = ztfidr.get_sample()
 TYPINGS = io.get_target_typing().loc[SAMPLE.data.index]
+DATA = SAMPLE.data.copy()
 
 
 PATH_CURRENT_SAMPLE = os.path.join(io.IDR_PATH, "tmp_typingapp/ztfcosmodr2_sample.csv")
@@ -28,18 +29,6 @@ TYPINGS.to_csv(PATH_CURRENT_TYPING)
 #  Data For App   #
 #                 #
 # =============== #
-
-
-def get_data(redshift_range=None, exclude_targets=None,
-                    first_spec_phase=None, **kwargs):
-    """ get targets to consider for the application. """
-    data = SAMPLE.data#get_data(redshift_range=redshift_range,
-                      #         exclude_targets=exclude_targets,
-                      #         first_spec_phase=first_spec_phase,
-                      #         **kwargs)
-    return data
-
-
 def get_target_lightcurve(name):
     """ the target lightcurve. """
     return SAMPLE.get_target_lightcurve(name)
