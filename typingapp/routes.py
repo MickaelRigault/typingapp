@@ -865,8 +865,11 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     # - Spectra Plots
     spectraplots = {}
     for spec_ in spectra:
-        if spec_ is None or spec_.snidresult is None:
-            print(f"{spec_} is None or snidresutl is None. So not shown")
+
+        print("spec_".center(50,"-"))
+        
+        if spec_ is None:
+            print(f"{spec_} is None")
             continue
 
         basename = os.path.basename(spec_.filename).lower()
@@ -876,7 +879,6 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
         
         # Figure
         buf = BytesIO()
-        fig = Figure(figsize=[9, 3])
 
         # Phase
         phase, dphase = spec_.get_phase(t0, redshift), t0_err
@@ -886,10 +888,14 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
         axlc.axvline(datetime, ls="--", color="0.6", lw=1)
         # -> Plot the spectrum
         try:
+            fig = Figure(figsize=[9, 3])
             _ = spec_.snidresult.show(fig=fig, label=spec_.filename.split("/")[-1],
                                   phase=phase, dphase=dphase, redshift=redshift, zlabel=zsource
                                   ).savefig(buf, format="png", dpi=250)
         except:
+            fig = Figure(figsize=[9, 2])
+            ax = fig.add_subplot(111)
+            _ = spec_.show(ax, show_error=False).savefig(buf, format="png", dpi=250)
             print("failed to use spec_.snidresult ")
             
         spectraplots[basename] = base64.b64encode(buf.getbuffer()).decode("ascii")
@@ -920,7 +926,6 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
                                spectraplots=spectraplots,
                                lcplot=lcplot)
         
-
 
 @app.route("/target/random")
 @login_required
