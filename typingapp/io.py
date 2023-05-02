@@ -10,7 +10,7 @@ DB_PATH = os.path.join(io.IDR_PATH, "typingapp.db")
 
 # DataSource
 SAMPLE = ztfidr.get_sample()
-TYPINGS = io.get_target_typing().loc[sample.data.index]
+TYPINGS = io.get_target_typing().loc[SAMPLE.data.index]
 
 
 PATH_CURRENT_SAMPLE = os.path.join(io.IDR_PATH, "tmp_typingapp/ztfcosmodr2_sample.csv")
