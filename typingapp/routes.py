@@ -487,7 +487,7 @@ def logout():
 @login_required
 def dashboard():
     """ """
-    return render_template("dashboard.html", appdata_prop=TYPINGAPP_DATA_PROP)
+    return render_template("dashboard.html")
 
 # -------- #
 #  USER    #

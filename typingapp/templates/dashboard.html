@@ -84,26 +84,5 @@
 </div>
 
 
-<div class="container mt-4">
-  <form method="post" action="/update/user" >
-    <table class="table table-hover">
-      <thead>
-        <tr>
-          <th scope="col">App Data limits</th>
-          <th scope="col">Configuration</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for key, value in appdata_prop.items() %}
-          <tr>
-            <th scope="row">{{ key }}</th>
-            <td>{{ value }}</td>
-         </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </form>
-</div>
-
 
 {% endblock %}
