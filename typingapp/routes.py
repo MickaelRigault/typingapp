@@ -62,6 +62,7 @@ LIST_OF_CLASSIFICATIONS = DATA_TO_CONSIDER["classification"].unique()
 NTARGETS = len(TARGETS_TO_CONSIDER)
 
 
+
 # =============== #
 #                 #
 #   PLOTTING      #
@@ -936,3 +937,22 @@ def target_random(skip_classified_more_than=2):
 #   Downloading    #
 #                  #
 # ================ #
+@app.route('/download/<which>', methods=["GET"]) # this is a job for GET, not POST
+@login_required
+def download(which):
+    if which == "data":
+        filename = typingapp_io.PATH_CURRENT_SAMPLE
+        mimetype='text/csv'
+    elif:
+        which == "typing":
+        filename = typingapp_io.PATH_CURRENT_TYPING
+        mimetype='text/csv'
+    else
+        flash(f"Cannot download {which}", category="error")
+        return redirect(url_for("home"))
+        
+    return send_file( filename,
+                          mimetype=mimetype,
+                          download_name=filename.split("/")[-1],
+                          as_attachment=True
+                          )
