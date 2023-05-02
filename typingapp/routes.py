@@ -932,10 +932,18 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
 def target_random(skip_classified_more_than=2):
     """ """    
     status, _ = get_user_status()
-    targets = get_my_targets_consider(as_list=False)
+    if status == "arbiter":
+        target_names = DATA_TO_CONSIDER[DATA_TO_CONSIDER["classification"].isin(["None","unclear"])].index
+        # remove already arbitered
+        arbitered = get_classified(by_current_user=False, typed=False, arbiter=True) # arbitered only
+        target_names = target_names[~np.in1d(target_names, arbitered)]
+    
+        targets = Targets.query.filter(Targets.name.in_( target_names ))
+    else:
+        targets = get_my_targets_consider(as_list=False)
 
-    already_classified = get_classified(incl_unclear=True, by_current_user=True)
-    targets = targets.filter(Targets.name.notin_( already_classified ))
+        already_classified = get_classified(incl_unclear=True, by_current_user=True)
+        targets = targets.filter(Targets.name.notin_( already_classified ))
     
     targetname = targets.order_by(func.random()).first().name
     return target_page(targetname, status=status)
