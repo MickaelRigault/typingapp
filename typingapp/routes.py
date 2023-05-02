@@ -943,8 +943,7 @@ def download(which):
     if which == "data":
         filename = typingapp_io.PATH_CURRENT_SAMPLE
         mimetype='text/csv'
-    elif:
-        which == "typing":
+    elif which == "typing":
         filename = typingapp_io.PATH_CURRENT_TYPING
         mimetype='text/csv'
     else:
