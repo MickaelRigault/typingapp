@@ -429,7 +429,7 @@ def home():
     if status in ["typer", "viewer"]:
         return render_template("home_stable.html", figure=HOMEPLOT)
 
-    target_names = DATA_TO_CONSIDER[DATA_TO_CONSIDER["classification"].isin(["None","unclear"])].index
+    target_names = DATA_TO_CONSIDER[DATA_TO_CONSIDER["classification"].isin(["None","unclear", np.NaN])].index
     # remove already arbitered
     arbitered = get_classified(by_current_user=False, typed=False, arbiter=True) # arbitered only
     target_names = target_names[~np.in1d(target_names, arbitered)]
@@ -933,7 +933,7 @@ def target_random(skip_classified_more_than=2):
     """ """    
     status, _ = get_user_status()
     if status == "arbiter":
-        target_names = DATA_TO_CONSIDER[DATA_TO_CONSIDER["classification"].isin(["None","unclear"])].index
+        target_names = DATA_TO_CONSIDER[DATA_TO_CONSIDER["classification"].isin(["None","unclear", np.NaN])].index
         # remove already arbitered
         arbitered = get_classified(by_current_user=False, typed=False, arbiter=True) # arbitered only
         target_names = target_names[~np.in1d(target_names, arbitered)]
