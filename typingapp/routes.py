@@ -36,6 +36,8 @@ from typingapp import app
 from . import io as typingapp_io
 from .forms import UserForm, LoginForm
 
+from ztfidr import typing
+
 
 
 
@@ -66,9 +68,11 @@ NTARGETS = len(TARGETS_TO_CONSIDER)
 #                 #
 # =============== #
 from matplotlib.figure import Figure
+from ztfidr import plotting
 bufHOME = BytesIO()
-FIG = Figure(figsize=[6, 4])
-_ = typingapp_io.get_hubble_figure(FIG).savefig(bufHOME, format="png", dpi=250)
+FIG = Figure(figsize=[7, 2])
+_ = plotting.show_typingdistribution(typingapp_io.SAMPLE, fig=FIG)
+_ = FIG.savefig(bufHOME, format="png", dpi=250)
 HOMEPLOT = base64.b64encode(bufHOME.getbuffer()).decode("ascii")
 
 #FILENAMES = {"all":"all_targets.csv"}
@@ -422,7 +426,6 @@ def merging_userdb(filepath_db):
 def home():
     """ """
     # my home
-
     return render_template("home.html", figure=HOMEPLOT)
 
 
