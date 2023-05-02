@@ -427,7 +427,16 @@ def merging_userdb(filepath_db):
 def home():
     """ """
     # my home
-    return render_template("home.html", figure=HOMEPLOT)
+    status, tprop = get_user_status()
+    if status in ["typer", "viewer"]:
+        return render_template("home_stable.html", figure=HOMEPLOT)
+
+    
+    targets = get_targets(as_list=False, **tprop)    
+    already_classified = get_classified(incl_unclear=True, by_current_user=True)
+    targets = targets.filter(Targets.name.notin_( already_classified ))
+
+    return render_template("home.html", targets=targets)
 
 
 @app.route("/tutorials")
@@ -927,10 +936,6 @@ def target_random(skip_classified_more_than=2):
     
     targetname = targets.order_by(func.random()).first().name
     return target_page(targetname, status=status)
-
-
-
-
 
 # ================ #
 #                  #
