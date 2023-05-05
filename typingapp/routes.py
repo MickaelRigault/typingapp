@@ -865,8 +865,6 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     # - Spectra Plots
     spectraplots = {}
     for spec_ in spectra:
-
-        print("spec_".center(50,"-"))
         
         if spec_ is None:
             print(f"{spec_} is None")
@@ -879,7 +877,8 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
         
         # Figure
         buf = BytesIO()
-
+        fig = Figure(figsize=[9, 3])
+        
         # Phase
         phase, dphase = spec_.get_phase(t0, redshift), t0_err
         datetime = spec_.get_obsdate().datetime
@@ -887,19 +886,16 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
         # -> Adding phase on the LC plot
         axlc.axvline(datetime, ls="--", color="0.6", lw=1)
         # -> Plot the spectrum
-        try:
-            fig = Figure(figsize=[9, 3])
+        if spec_.snidresult is not None:
             _ = spec_.snidresult.show(fig=fig, label=spec_.filename.split("/")[-1],
                                   phase=phase, dphase=dphase, redshift=redshift, zlabel=zsource
                                   ).savefig(buf, format="png", dpi=250)
-        except:
-            fig = Figure(figsize=[9, 2])
+            spectraplots[basename] = base64.b64encode(buf.getbuffer()).decode("ascii")
+        else:
             ax = fig.add_subplot(111)
-            _ = spec_.show(ax, show_error=False).savefig(buf, format="png", dpi=250)
-            print("failed to use spec_.snidresult ")
-            
-        spectraplots[basename] = base64.b64encode(buf.getbuffer()).decode("ascii")
-
+            _ = spec_.show(ax=ax, label=spec_.filename.split("/")[-1])
+            _ = fig.savefig(buf, format="png", dpi=250)
+            spectraplots[basename] = base64.b64encode(buf.getbuffer()).decode("ascii")
     # - Storing the LC plot    #
     try:
         if current_user.config__lcplot == "None" or current_user.config__lcplot == None or current_user.config__lcplot == "flux":
