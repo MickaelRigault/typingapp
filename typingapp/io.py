@@ -10,7 +10,7 @@ DB_PATH = os.path.join(io.IDR_PATH, "typingapp.db")
 
 # DataSource
 SAMPLE = ztfidr.get_sample()
-TYPINGS = io.get_target_typing().loc[SAMPLE.data.index]
+TYPINGS = io.get_target_typing(from_datacreation=True).loc[SAMPLE.data.index]
 DATA = SAMPLE.data.copy()
 
 

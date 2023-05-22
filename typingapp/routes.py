@@ -807,10 +807,12 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     # DB
     if name in typingapp_io.TYPINGS.index:
         target_typing = typingapp_io.TYPINGS.loc[name]
-        typing_info = dict( zip(target_typing["typing"],target_typing["ntypings"]) )
+        typing_info = {"details": dict( zip(target_typing["typing"],target_typing["ntypings"]) )}
+        typing_info["origin"] = target_typing["class_origin"]
         del target_typing
     else:
-        typing_info = {"no-typing-info": None}
+        typing_info = {"details": {"no-typing-info": None},
+                        "origin": None}
         
     # = Requesting page = #
     # input arguments
@@ -926,8 +928,10 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
 @app.route("/target/random")
 @login_required
 def target_random(skip_classified_more_than=2):
-    """ """    
+    """ """
     status, _ = get_user_status()
+    """
+    
     if status == "arbiter":
         target_names = DATA_TO_CONSIDER[DATA_TO_CONSIDER["classification"].isin(["None","unclear", np.NaN])].index
         # remove already arbitered
@@ -937,10 +941,10 @@ def target_random(skip_classified_more_than=2):
         targets = Targets.query.filter(Targets.name.in_( target_names ))
     else:
         targets = get_my_targets_consider(as_list=False)
-
         already_classified = get_classified(incl_unclear=True, by_current_user=True)
         targets = targets.filter(Targets.name.notin_( already_classified ))
-    
+    """
+    targets =get_targets(to_consider=False, as_list=False)# get_my_targets_consider(as_list=False)
     targetname = targets.order_by(func.random()).first().name
     return target_page(targetname, status=status)
 

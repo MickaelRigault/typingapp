@@ -19,9 +19,10 @@
             <h1> {{ data.name }} needs additional inputs </h1>
           {% endif %}
           <h3> details |
-            {% for key, value in typing.items() %}
+            {% for key, value in typing['details'].items() %}
                {{ value }}:{{ key }}
-            {% endfor %}
+	    {% endfor %}
+	    ({{ typing['origin'] }})
            </h3>
         </div>
 
@@ -89,6 +90,8 @@
 {% if status == 'reviewer' %}
   {% include 'review_buttons.html' %}
 {% elif status == 'arbiter' %}
+  {% include 'arbiter_buttons.html' %}
+{% else %}
   {% include 'arbiter_buttons.html' %}
 {% endif %}
 
