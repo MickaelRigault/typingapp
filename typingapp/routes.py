@@ -225,7 +225,9 @@ def get_targets(to_consider=True, classifications=None, as_list=False,
     list or query
     """
     targets = Targets.query
-
+    targets = targets.filter( Targets.name.in_(TARGETS_TO_CONSIDER) ) # only from data
+    
+    
     if classifications is not None:
         to_consider = True
         classifications = np.atleast_1d(classifications)
@@ -944,7 +946,7 @@ def target_random(skip_classified_more_than=2):
         already_classified = get_classified(incl_unclear=True, by_current_user=True)
         targets = targets.filter(Targets.name.notin_( already_classified ))
     """
-    targets =get_targets(to_consider=False, as_list=False)# get_my_targets_consider(as_list=False)
+    targets = get_targets(to_consider=False, as_list=False)# get_my_targets_consider(as_list=False)
     targetname = targets.order_by(func.random()).first().name
     return target_page(targetname, status=status)
 
