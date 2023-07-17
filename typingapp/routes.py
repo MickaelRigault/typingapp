@@ -841,9 +841,9 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     # ---------- #
     #    Data    #
     # ---------- #
-    lightcurve = typingapp_io.get_target_lightcurve(name)
-    spectra = typingapp_io.get_target_spectra(name)
-    target_data = typingapp_io.get_target_data(name)
+    lightcurve = typingapp_io.SAMPLE.get_target_lightcurve(name)
+    spectra = np.atleast_1d(typingapp_io.SAMPLE.get_target_spectra(name)) # list even if 1 spectrum
+    target_data = typingapp_io.SAMPLE.data.loc[name]
     t0, t0_err, redshift, redshift_err, zsource = target_data[["t0","t0_err", "redshift","redshift_err", "source"]].values
 
     # - remove already 'rm' spectra by someone
@@ -865,7 +865,7 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     # ------------ #
     buflc = BytesIO()
     axlc = Figure(figsize=[7, 2]).add_axes([0.08, 0.25, 0.87, 0.7])
-
+    
     # - Spectra Plots
     spectraplots = {}
     for spec_ in spectra:
@@ -884,7 +884,7 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
         fig = Figure(figsize=[9, 3])
         
         # Phase
-        phase, dphase = spec_.get_phase(t0, redshift), t0_err
+        phase, dphase = spec_.get_phase(t0, redshift, from_target=False), t0_err
         datetime = spec_.get_obsdate().datetime
 
         # -> Adding phase on the LC plot
@@ -900,6 +900,7 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
             _ = spec_.show(ax=ax, label=spec_.filename.split("/")[-1])
             _ = fig.savefig(buf, format="png", dpi=250)
             spectraplots[basename] = base64.b64encode(buf.getbuffer()).decode("ascii")
+            
     # - Storing the LC plot    #
     try:
         if current_user.config__lcplot == "None" or current_user.config__lcplot == None or current_user.config__lcplot == "flux":
@@ -913,6 +914,19 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
         warnings.warn(f"Cannot build the LC for {name}")
         lcplot = None
 
+    # ------------ #
+    #   Host Plot  #
+    # ------------ #
+    bufhost = BytesIO()
+    fighost = Figure(figsize=[7, 2])
+    from ztfidr import host
+    _ = host.show_host(name, fig=fighost, inmag=True)
+    _ = fighost.savefig(bufhost, format="png", dpi=250)
+    hostplot = base64.b64encode(bufhost.getbuffer()).decode("ascii")
+
+
+
+        
     # Delete the
     del lightcurve
     del spectra
@@ -924,7 +938,8 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
                                data=target_data, target=target,
                                typing=typing_info,
                                spectraplots=spectraplots,
-                               lcplot=lcplot)
+                               lcplot=lcplot,
+                               hostplot=hostplot)
         
 
 @app.route("/target/random")
@@ -933,7 +948,6 @@ def target_random(skip_classified_more_than=2):
     """ """
     status, _ = get_user_status()
     """
-    
     if status == "arbiter":
         target_names = DATA_TO_CONSIDER[DATA_TO_CONSIDER["classification"].isin(["None","unclear", np.NaN])].index
         # remove already arbitered
