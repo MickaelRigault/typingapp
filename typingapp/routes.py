@@ -862,10 +862,10 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     # ---------- #
     lightcurve = typingapp_io.SAMPLE.get_target_lightcurve(name)
     spectra = np.atleast_1d(typingapp_io.SAMPLE.get_target_spectra(name)) # list even if 1 spectrum
-    if name in typingapp_io.SAMPLE.data:
+    if name in typingapp_io.SAMPLE.data.index:
         target_data = typingapp_io.SAMPLE.data.loc[name]
     else:
-        target_data = pandas.DataFrame(columns=typingapp_io.SAMPLE.data.columns).reindex([0]).loc[0]
+        target_data = pandas.DataFrame(columns=typingapp_io.SAMPLE.data.columns).reindex([name]).loc[name]
         
     t0, t0_err, redshift, redshift_err, zsource = target_data[["t0","t0_err", "redshift","redshift_err", "source"]].values
     
