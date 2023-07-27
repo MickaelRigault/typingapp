@@ -862,9 +862,13 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     # ---------- #
     lightcurve = typingapp_io.SAMPLE.get_target_lightcurve(name)
     spectra = np.atleast_1d(typingapp_io.SAMPLE.get_target_spectra(name)) # list even if 1 spectrum
-    target_data = typingapp_io.SAMPLE.data.loc[name]
+    if name in typingapp_io.SAMPLE.data:
+        target_data = typingapp_io.SAMPLE.data.loc[name]
+    else:
+        target_data = pandas.DataFrame(columns=typingapp_io.SAMPLE.data.columns).reindex([0]).loc[0]
+        
     t0, t0_err, redshift, redshift_err, zsource = target_data[["t0","t0_err", "redshift","redshift_err", "source"]].values
-
+    
     # - remove already 'rm' spectra by someone
     if eval(args.get("rm_badspec", default=str(rm_badspec), type=str)):
         reported = Classifications.query.filter_by(kind="report", target_name=name).all()
@@ -938,11 +942,14 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     # ------------ #
     bufhost = BytesIO()
     fighost = Figure(figsize=[7, 2])
-    from ztfidr import host
-    _ = host.show_host(name, fig=fighost, inmag=True)
-    _ = fighost.savefig(bufhost, format="png", dpi=250)
-    hostplot = base64.b64encode(bufhost.getbuffer()).decode("ascii")
-
+    try:
+        from ztfidr import host
+        _ = host.show_host(name, fig=fighost, inmag=True)
+        _ = fighost.savefig(bufhost, format="png", dpi=250)
+        hostplot = base64.b64encode(bufhost.getbuffer()).decode("ascii")
+    except:
+         warnings.warn(f"Cannot build the host plot for {name}")
+         hostplot = None
 
 
         
