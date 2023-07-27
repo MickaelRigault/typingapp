@@ -674,12 +674,15 @@ def clear_user_classifications(id_):
     return redirect(url_for("classifications"))
 
 
-@app.route("/classify/<int:id>", methods=["GET", "POST"])
+@app.route("/classify/<id>", methods=["GET", "POST"])
 @login_required
 def classify(id, flash_classified=False):
     """ """
     # - Target action made to
-    target = Targets.query.get_or_404(id)  # get the DB entry
+   
+    target_id = id
+    target_name = id
+        
     # associated to the id
 
     # Information are contained withing this
@@ -694,8 +697,8 @@ def classify(id, flash_classified=False):
         if input_keys == "typing":  # This is a classification
             value = request.form["typing"]
             classification = Classifications(user_id=current_user.id,
-                                             target_id=id,
-                                             target_name=target.name,
+                                             target_id=target_id,
+                                             target_name=target_name,
                                              kind="typing",
                                              value=value.strip().lower()
                                              )
@@ -717,8 +720,8 @@ def classify(id, flash_classified=False):
             value = input_keys.replace(f"{kind}:", "")
             
             classification = Classifications(user_id=current_user.id,
-                                             target_id=id,
-                                             target_name=target.name,
+                                             target_id=target_id,
+                                             target_name=target_name,
                                              kind=kind,
                                              value=value.strip().lower()
                                              )
@@ -739,22 +742,22 @@ def classify(id, flash_classified=False):
             if go_to_random:
                 return redirect(url_for("target_random"))
             
-            flash(f"You reported {value} for {target.name}",
+            flash(f"You reported {value} for {target_name}",
                   category="warning")
             
-            return redirect(url_for(f"target_page", name=target.name,
+            return redirect(url_for(f"target_page", name=target_name,
                                     warn_report=False))
             
         
         elif "skip" in request.form:
-            flash(f"You skipped {target.name} | no db update",
+            flash(f"You skipped {target_name} | no db update",
                   category="secondary")
             
             return redirect(url_for("target_random"))
 
     flash(
         f"Classication/Report action Failed input_keys: {input_keys}", category="danger")
-    return redirect(url_for(f"target_page", name=target.name, warn_report=False))
+    return redirect(url_for(f"target_page", name=target_name, warn_report=False))
 
 
 @app.route("/classifications")

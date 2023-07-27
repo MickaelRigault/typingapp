@@ -104,7 +104,7 @@
 
 <div class="container-fluid">
   <!--- Loop over the spectra --->
-  <form method="post" action="/classify/{{ target.id }}" >
+  <form method="post" action="/classify/{{ data.name }}" >
     {% for basename, specplot in spectraplots.items() %}
     <div class="row">
       <img src='data:image/png;base64,{{ specplot }}'/>
@@ -133,7 +133,7 @@
     <img src='data:image/png;base64,{{ lcplot }}' />
   </div">
 
-  <form method="post" action="/classify/{{ target.id }}" >
+  <form method="post" action="/classify/{{ data.name }}" >
     <div class="row mb-3">
       <div class="d-grid gap-2 d-sm-flex justify-content-end">
 
