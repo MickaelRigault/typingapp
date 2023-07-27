@@ -39,7 +39,7 @@ from .forms import UserForm, LoginForm
 from ztfidr import typing
 
 
-
+ADMIN_ID = [1]
 
 # -------------- #
 # LOCAL DATABASE #
@@ -199,6 +199,11 @@ def load_user(user_id):
         return Users.query.get(int(user_id))
     except:
         return None
+
+
+def current_user_is_admin():
+    """ """
+    return current_user.id in ADMIN_ID
 
 # ================ #
 #                  #
@@ -652,6 +657,20 @@ def clear_classifications():
     db.session.query(Classifications).filter_by(
         user_id=current_user.id).delete()
     db.session.commit()
+    return redirect(url_for("classifications"))
+
+
+@app.route("/clearclassifications/<int:id_>")
+@login_required
+def clear_user_classifications(id_):
+    """ """
+    if not current_user_is_admin():
+        flash("Only admin user can clear one another's classifications", category="error")
+    else: # is admind
+        db.session.query(Classifications).filter_by(
+            user_id=id_).delete()
+        db.session.commit()
+        
     return redirect(url_for("classifications"))
 
 
