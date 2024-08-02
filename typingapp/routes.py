@@ -923,17 +923,18 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
             spectraplots[basename] = base64.b64encode(buf.getbuffer()).decode("ascii")
             
     # - Storing the LC plot    #
-#    try:
-    if current_user.config__lcplot == "None" or current_user.config__lcplot == None or current_user.config__lcplot == "flux":
-        figlc = lightcurve.show(ax=axlc)
-    else:
-        figlc = lightcurve.show(ax=axlc, inmag=True)
-
-    _ = figlc.savefig(buflc, format="png", dpi=250)
-    lcplot = base64.b64encode(buflc.getbuffer()).decode("ascii")
-    #except:
-    #    warnings.warn(f"Cannot build the LC for {name}")
-    #    lcplot = None
+    try:
+        if current_user.config__lcplot == "None" or current_user.config__lcplot == None or current_user.config__lcplot == "flux":
+            figlc = lightcurve.show(ax=axlc)
+        else:
+            figlc = lightcurve.show(ax=axlc, inmag=True)
+            
+        _ = figlc.savefig(buflc, format="png", dpi=250)
+        lcplot = base64.b64encode(buflc.getbuffer()).decode("ascii")
+        
+    except:
+        warnings.warn(f"Cannot build the LC for {name}")
+        lcplot = None
 
     # ------------ #
     #   Host Plot  #
