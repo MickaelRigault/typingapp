@@ -55,7 +55,6 @@ migrate = Migrate(app, db)
 
 DATA_TO_CONSIDER = typingapp_io.DATA
 TARGETS_TO_CONSIDER = list(DATA_TO_CONSIDER.index)
-LIST_OF_CLASSIFICATIONS = DATA_TO_CONSIDER["classification"].unique()
 NTARGETS = len(TARGETS_TO_CONSIDER)
 
 
@@ -66,12 +65,6 @@ NTARGETS = len(TARGETS_TO_CONSIDER)
 #                 #
 # =============== #
 from matplotlib.figure import Figure
-from ztfidr import plotting
-bufHOME = BytesIO()
-FIG = Figure(figsize=[7, 2])
-_ = plotting.show_typingdistribution(typingapp_io.SAMPLE, fig=FIG)
-_ = FIG.savefig(bufHOME, format="png", dpi=250)
-HOMEPLOT = base64.b64encode(bufHOME.getbuffer()).decode("ascii")
 
 
 # ==================== #
@@ -432,10 +425,8 @@ def home():
     """ """
     # my home
     status, _ = get_user_status()
-    if status in ["typer", "viewer"]:
-        return render_template("home_stable.html", figure=HOMEPLOT)
 
-    target_names = DATA_TO_CONSIDER[DATA_TO_CONSIDER["classification"].isin(["None","unclear", np.NaN])].index
+    target_names = DATA_TO_CONSIDER[DATA_TO_CONSIDER["sn_type"].isin(["None","unclear", np.NaN])].index
     # remove already arbitered
     arbitered = get_classified(by_current_user=False, typed=False, arbiter=True) # arbitered only
     target_names = target_names[~np.in1d(target_names, arbitered)]
