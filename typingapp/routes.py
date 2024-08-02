@@ -109,7 +109,7 @@ class Users(db.Model, UserMixin):
     @password.setter
     def password(self, password):
         """ """
-        self.password_hash = generate_password_hash(password)
+        self.password_hash = generate_password_hash(password, "pbkdf2:sha256")
 
     def verify_password(self, password):
         """ """
@@ -513,7 +513,7 @@ def add_user():
         if user is None:
             # create a new db user entry
             hashed_pwd = generate_password_hash(
-                form.password_hash.data, "sha256")
+                form.password_hash.data, "pbkdf2:sha256")
 
             user = Users(username=form.username.data,
                          name=form.name.data,
@@ -584,7 +584,7 @@ def update_password():
             return redirect(url_for("update_password"))
 
         hashed_pwd = generate_password_hash(
-            request.form["newpassword_hash"], "sha256")
+            request.form["newpassword_hash"], "pbkdf2:sha256")
         user.password_hash = hashed_pwd
         try:
             db.session.commit()
