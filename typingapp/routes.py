@@ -200,7 +200,6 @@ def load_user(user_id):
     except:
         return None
 
-
 def current_user_is_admin():
     """ """
     return current_user.id in ADMIN_ID
