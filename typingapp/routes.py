@@ -45,10 +45,14 @@ ADMIN_ID = [1]
 # LOCAL DATABASE #
 # -------------- #
 app.config["SQLALCHEMY_DATABASE_URI"] = f'sqlite:///{typingapp_io.DB_PATH}'
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-
+from sqlalchemy import create_engine
+from sqlalchemy.pool import SingletonThreadPool
+engine = create_engine(app.config["SQLALCHEMY_DATABASE_URI"], echo=True, connect_args={"check_same_thread": False}) # db.engine
+connection = engine.raw_connection()
 # -------------- #
 # DATA           #
 # -------------- #
@@ -234,7 +238,7 @@ def get_targets(to_consider=True, classifications=None, as_list=False,
 
     if report_contains is not None or report_notcontains is not None:
         current_report = pandas.read_sql_query(f"SELECT * FROM Classifications WHERE kind='report'",
-                                               db.engine)        
+                                               con=connection)        
         if report_contains is not None:
             contains = "|".join( np.atleast_1d(report_contains) )
             limited_to = current_report[ current_report["target_name"].isin(targets_to_consider) &
@@ -318,7 +322,7 @@ def get_classified(arbiter=True, typed=True,
         query += f" AND user_id = {current_user.id}"
 
     print(query)
-    typed_names = pandas.read_sql_query(query, db.engine)["target_name"].unique()
+    typed_names = pandas.read_sql_query(query, con=connection)["target_name"].unique()
     return typed_names
 
 
@@ -339,7 +343,7 @@ def get_not_classified(incl_unclear=False, type_isin=None, as_basequery=False,
 
     if skip_classified_more_than is not None:
         current_classifications = pandas.read_sql_query("SELECT * FROM Classifications WHERE kind='typing' AND value!='unclear'",
-                                                        db.engine)
+                                                        con=connection)
 
         nclassification = current_classifications.groupby("target_name").size()
         is_classified_byother = nclassification[nclassification >= skip_classified_more_than].index
@@ -361,7 +365,7 @@ def get_mytargets(user_id):
     """ """
     return pandas.read_sql_query("SELECT * FROM Classifications WHERE value='target:target'"+
                                 f" and user_id = {user_id}",
-                                 db.engine)
+                                 con=connection)
 
 # ================ #
 #                  #
@@ -376,7 +380,7 @@ def merging_userdb(filepath_db):
     # Merge the user
     #
     # - Current
-    current_users = pandas.read_sql_query("SELECT * FROM Users", db.engine)
+    current_users = pandas.read_sql_query("SELECT * FROM Users", con=connection)
 
     # -> new
     newuser = pandas.read_sql_query("SELECT * FROM Users", connew)
@@ -398,7 +402,7 @@ def merging_userdb(filepath_db):
     # Merge the Classifications
     #
     current_classifications = pandas.read_sql_query(
-        "SELECT * FROM Classifications", db.engine)
+        "SELECT * FROM Classifications", con=connection)
     new_classifications = pandas.read_sql_query(
         "SELECT * FROM Classifications", connew)
     new_classifications["user_id"] = newuser_id
@@ -821,11 +825,12 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
     # DB
     if name in typingapp_io.TYPINGS.index:
         target_typing = typingapp_io.TYPINGS.loc[name]
-        typing_info = {"details": dict( zip(target_typing["typing"],target_typing["ntypings"]) )}
-        typing_info["origin"] = target_typing["class_origin"]
+        typing_info = {"sn_type": target_typing["sn_type"],
+                       "sub_type": target_typing["sub_type"]
+                    }
         del target_typing
     else:
-        typing_info = {"details": {"no-typing-info": None},
+        typing_info = {"sn_type": None,
                         "origin": None}
         
     # = Requesting page = #
@@ -918,17 +923,17 @@ def target_page(name, warn_typing=True, warn_report=True, rm_badspec=True, statu
             spectraplots[basename] = base64.b64encode(buf.getbuffer()).decode("ascii")
             
     # - Storing the LC plot    #
-    try:
-        if current_user.config__lcplot == "None" or current_user.config__lcplot == None or current_user.config__lcplot == "flux":
-            figlc = lightcurve.show(ax=axlc)
-        else:
-            figlc = lightcurve.show(ax=axlc, inmag=True)
+#    try:
+    if current_user.config__lcplot == "None" or current_user.config__lcplot == None or current_user.config__lcplot == "flux":
+        figlc = lightcurve.show(ax=axlc)
+    else:
+        figlc = lightcurve.show(ax=axlc, inmag=True)
 
-        _ = figlc.savefig(buflc, format="png", dpi=250)
-        lcplot = base64.b64encode(buflc.getbuffer()).decode("ascii")
-    except:
-        warnings.warn(f"Cannot build the LC for {name}")
-        lcplot = None
+    _ = figlc.savefig(buflc, format="png", dpi=250)
+    lcplot = base64.b64encode(buflc.getbuffer()).decode("ascii")
+    #except:
+    #    warnings.warn(f"Cannot build the LC for {name}")
+    #    lcplot = None
 
     # ------------ #
     #   Host Plot  #

@@ -12,17 +12,13 @@
         <div class="col-auto me-auto">
 
           {% if data.classification not in ('None', 'confusing', 'nan') %}
-            <h1> {{ data.name }} is classified as a '{{ data.classification }}' </h1>
+            <h1> {{ data.name }} is classified as a '{{ typing.sn_type }}' </h1>
           {% elif  data.classification == 'confusing' %}
             <h1> {{ data.name }} is confusing </h1>
           {% else %}
             <h1> {{ data.name }} needs additional inputs </h1>
           {% endif %}
-          <h3> details |
-            {% for key, value in typing['details'].items() %}
-               {{ value }}:{{ key }}
-	    {% endfor %}
-	    ({{ typing['origin'] }})
+          <h3> ({{ typing['sub_type'] }})
            </h3>
         </div>
 
